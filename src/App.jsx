@@ -40,14 +40,14 @@ const App = () => {
           <Route path="login" element={<Login />} />
           <Route
             path="/*"
-            // element={
-            //   <PrivateRoute>
-            //     <Master />
-            //   </PrivateRoute>
-            // }
             element={
-              <Master />
+              <PrivateRoute>
+                <Master />
+              </PrivateRoute>
             }
+            // element={
+            //   <Master />
+            // }
           />
         </Routes>
       </Router>

@@ -66,10 +66,10 @@ const Sidebar = () => {
           
         </div>
       </div>
-      <div className="sb-sidenav-footer">
+      {/* <div className="sb-sidenav-footer">
         <div className="small">Logged in as: {userName}</div>
         <button onClick={handleLogout} className="btn btn-link text-decoration-none">Logout</button>
-      </div>
+      </div> */}
     </nav>
   );
 };
