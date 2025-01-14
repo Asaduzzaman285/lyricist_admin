@@ -23,6 +23,7 @@ function Paginate(props) {
 
     return (
         <Fragment>
+             <div className="d-flex justify-content-between align-items-center mb-3">
             <div className="float-left">
                 Showing {paginator?.current_page==1 ? 1 : (paginator?.current_page-1)*paginator?.record_per_page+1} to {paginator?.current_page==1 ? paginator?.current_page_items_count : (paginator?.current_page-1)*paginator?.record_per_page+paginator?.current_page_items_count} of {paginator?.total_count} entries
             </div>
@@ -110,6 +111,7 @@ function Paginate(props) {
                     
                 </ul>
             </nav>
+            </div>
         </Fragment>
     )
 }

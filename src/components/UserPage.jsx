@@ -95,8 +95,18 @@ const UserPage = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(6);
-  const [paginator, setPaginator] = useState({});
+  const [usersPerPage] = useState(5);
+  const [paginator, setPaginator] = useState({
+    current_page: 1,
+    total_pages: 1,
+    previous_page_url: null,
+    next_page_url: null,
+    record_per_page: 5,
+    current_page_items_count: 0,
+    total_count: 0,
+    pagination_last_page: 1
+  });
+ 
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -109,8 +119,8 @@ const UserPage = () => {
 
   // Fetch data from API
   useEffect(() => {
-    getUsersData();
-  }, []);
+    getUsersData(searchTerm, currentPage); 
+  }, [searchTerm, currentPage]); 
 
   const getUsersData = (search = null, page = 1) => {
     console.log("Fetching data...");
@@ -118,27 +128,37 @@ const UserPage = () => {
     console.log("Token:", token);
     axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
     axios.defaults.headers.post['Content-Type'] = 'application/json';
-    axios.post(`http://192.168.1.177:84/api/v1/getAllUsers_p?page=${page}`, { search }, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
+    axios.post(`https://lyricistadminapi.wineds.com/api/v1/getAllUsers_p?page=${page}`, { search }, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        }
     })
     .then((response) => {
-      console.log("Response received:", response);
-      setUsers(response.data.data); // Adjusted to match your API response structure
-      setFilteredUsers(response.data.data);
-      setPaginator(response.data.paginator); // Set paginator data
+        console.log("Response received:", response);
+        if (response.data.data && response.data.data.data && response.data.data.paginator) {
+            setUsers(response.data.data.data);
+            setFilteredUsers(response.data.data.data);
+            setPaginator(response.data.data.paginator); // Set paginator data
+        } else {
+            console.error('Invalid data format', response.data);
+        }
     })
     .catch((error) => {
-      console.error('Error fetching data:', error);
+        console.error('Error fetching data:', error);
     });
   };
 
-  // Filter users
+  // Handle filter change
   const handleFilterChange = (e) => {
-    setSearchTerm(e.target.value);
-    getUsersData(e.target.value, 1);
+    const searchTerm = e.target.value;
+    setSearchTerm(searchTerm);
+    const filtered = users.filter(user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
   };
 
   // Toggle visibility of update button
@@ -151,34 +171,39 @@ const UserPage = () => {
 
   // Render user rows
   const renderUserRows = () => {
+    console.log('Rendering user rows...');
+    if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) {
+        console.log('No users found');
+        return <tr><td colSpan="5">No users found</td></tr>;
+    }
     return filteredUsers.map((user, i) => (
-      <tr key={user.id}>
-        <td>{paginator.current_page > 1 ? ((paginator.current_page - 1) * paginator.record_per_page) + i + 1 : i + 1}</td>
-        <td>{user.name}</td>
-        <td>{user.phone}</td>
-        <td>{user.email}</td>
-        <td className="text-center">
-          <Dropdown>
-            <Dropdown.Toggle
-              variant="link"
-              className="text-decoration-none p-0"
-              id={`dropdown-${user.id}`}
-              onClick={() => toggleUpdateButton(user.id)}
-            >
-              <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu show={visibleUpdateButtons[user.id]}>
-              <Dropdown.Item
-                onClick={() => handleEdit(user)}
-                className="text-primary"
-              >
-                Update
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </td>
-      </tr>
+        <tr key={user.id}>
+            <td>{paginator.current_page > 1 ? ((paginator.current_page - 1) * paginator.record_per_page) + i + 1 : i + 1}</td>
+            <td>{user.name}</td>
+            <td>{user.phone}</td>
+            <td>{user.email}</td>
+            <td className="text-center">
+                <Dropdown>
+                    <Dropdown.Toggle
+                        variant="link"
+                        className="text-decoration-none p-0"
+                        id={`dropdown-${user.id}`}
+                        onClick={() => toggleUpdateButton(user.id)}
+                    >
+                        <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
+                    </Dropdown.Toggle>
+  
+                    <Dropdown.Menu show={visibleUpdateButtons[user.id]}>
+                        <Dropdown.Item
+                            onClick={() => handleEdit(user)}
+                            className="text-primary"
+                        >
+                            Update
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+            </td>
+        </tr>
     ));
   };
 
@@ -194,23 +219,21 @@ const UserPage = () => {
   const handleEdit = (user) => {
     setModalData({
       ...user,
-      role_ids: user.role_ids || [], // Ensure role_ids is set correctly
-      password: "" // Clear password field when editing
+      role_ids: user.roles.map(role => role.id) || [],
+      password: "" 
     });
     setIsEditing(true);
     setEditingUserId(user.id);
     setShowModal(true);
   };
-
   // Handle Modal Submit
   const handleModalSubmit = (e) => {
     e.preventDefault();
     const { id, name, email, phone, role_ids, status, password } = modalData;
-    const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
-
+    const token = localStorage.getItem('authToken'); 
     if (isEditing) {
       // Update user logic
-      axios.post(`http://192.168.1.177:84/api/v1/updateUser`, {
+      axios.post(`https://lyricistadminapi.wineds.com/api/v1/updateUser`, {
         id, 
         name,
         email,
@@ -235,67 +258,47 @@ const UserPage = () => {
       });
     } else {
       // Add new user logic
-      axios.post("http://192.168.1.177:84/api/v1/createUser", {
-        name,
-        email,
-        phone,
-        role_ids,
-        status,
+      axios.post("https://lyricistadminapi.wineds.com/api/v1/createUser", {
+        name, 
+        email, 
+        phone, 
+        role_ids, 
+        status, 
         password
-      },{
+      }, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // Use the retrieved token
+          "Authorization": `Bearer ${token}`
         }
       })
       .then((response) => {
-        const newUser = { id: response.data.id, name, email, phone, role_ids, status };
-        setUsers([...users, newUser]);
-        setFilteredUsers([...users, newUser]);
+        const newUser = response.data.data;
+        setUsers([newUser, ...users]);
+        setFilteredUsers([newUser, ...users]);
       })
       .catch((error) => {
-        console.error('Error creating user:', error);
+        console.error('Error adding user:', error);
       });
     }
-  
-    setShowModal(false);
-    setEditingUserId(null);
+
+    handleClose();
   };
-  
+
+  // Close Modal
+  const handleClose = () => setShowModal(false);
+
   return (
-    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%' }}>
-      <h1>User Page</h1>
-      <Form.Group className="d-flex align-items-center mb-3" style={{ width: "70%" }}>
-        <Form.Control
+    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%' }} >
+      <h1 className="my-4">Users</h1>
+      <div className="mb-3">
+        <input
           type="text"
-          placeholder="Filter by name or phone..."
+          className="form-control"
+          placeholder="Search users..."
           value={searchTerm}
-          onChange={(e) => handleFilterChange(e)}
-          className="me-2"
+          onChange={handleFilterChange}
         />
-        <Button
-          variant="secondary"
-          className="me-2 d-flex align-items-center"
-          onClick={() => getUsersData(searchTerm, 1)}
-        >
-          <i className="fa-solid fa-filter me-1"></i> Filter
-        </Button>
-        <Button
-          variant="outline-danger"
-          className="d-flex align-items-center"
-          onClick={() => {
-            setSearchTerm("");
-            getUsersData("", 1);
-          }}
-        >
-          <i className="fa-solid fa-times me-1"></i> Clear
-        </Button>
-      </Form.Group>
-  
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        <i className="fa-solid fa-plus"></i> Create New User
-      </Button>
-  
+      </div>
       <table className="table table-bordered">
         <thead>
           <tr>
@@ -306,16 +309,25 @@ const UserPage = () => {
             <th className="text-center">Actions</th>
           </tr>
         </thead>
-        <tbody>{renderUserRows()}</tbody>
+        <tbody>
+          {renderUserRows()}
+        </tbody>
       </table>
-  
-      {paginator.total_pages > 1 && (
-        <Paginate paginator={paginator} pagechanged={(page) => getUsersData(searchTerm, page)} />
+
+      {paginator?.total_pages > 1 && (
+        <Paginate
+          paginator={paginator}
+          pagechanged={(page) => setCurrentPage(page)}
+        />
       )}
-  
+
+      <Button onClick={handleAdd} variant="primary" className="mt-3">
+        Add New User
+      </Button>
+
       <UserModal
         show={showModal}
-        handleClose={() => setShowModal(false)}
+        handleClose={handleClose}
         handleSubmit={handleModalSubmit}
         modalData={modalData}
         setModalData={setModalData}
@@ -323,6 +335,6 @@ const UserPage = () => {
       />
     </div>
   );
-  };
-  
-  export default UserPage;
+};
+
+export default UserPage;
