@@ -27,6 +27,18 @@ const Sidebar = () => {
             </div>
             Users
           </Link>
+          <Link className="nav-link" to="/admin/sliders">
+            <div className="sb-nav-link-icon">
+              <i className="fas fa-tachometer-alt"></i>
+            </div>
+            Sliders
+          </Link>
+          <Link className="nav-link" to="/admin/ads">
+            <div className="sb-nav-link-icon">
+              <i className="fas fa-tachometer-alt"></i>
+            </div>
+            Ads
+          </Link>
           <Link className="nav-link" to="/admin/members">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
@@ -39,11 +51,11 @@ const Sidebar = () => {
             </div>
             Events
           </Link>
-          <Link className="nav-link" to="/admin/contents">
+          <Link className="nav-link" to="/admin/products">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
             </div>
-            Contents
+            Products
           </Link>
           <Link className="nav-link" to="/admin/contents">
             <div className="sb-nav-link-icon">
@@ -51,7 +63,7 @@ const Sidebar = () => {
             </div>
             Podcasts
           </Link>
-          <Link className="nav-link" to="/admin/contents">
+          <Link className="nav-link" to="/admin/success_stories">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
             </div>

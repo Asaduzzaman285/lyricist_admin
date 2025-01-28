@@ -1,206 +1,302 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Table, Dropdown } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Form, Table, Dropdown } from 'react-bootstrap';
+import axios from 'axios';
+import Select from 'react-select';
+import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
 
 const EventPage = () => {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [eventsPerPage] = useState(6);
+  const [eventsPerPage] = useState(10); // Adjust as needed
+  const [paginator, setPaginator] = useState({
+    current_page: 1,
+    total_pages: 1,
+    previous_page_url: null,
+    next_page_url: null,
+    record_per_page: 10,
+    current_page_items_count: 0,
+    total_count: 0,
+    pagination_last_page: 1
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({
     image: null,
-    eventName: "",
-    artistName: "",
-    eventDate: "",
-    location: "",
+    title: "",
+    artist: "",
+    date: "",
     description: "",
+    location: "",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingEventId, setEditingEventId] = useState(null);
+  const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
+  
+  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
-  // Fetch events from the API
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/events")
-      .then((response) => response.json())
-      .then((data) => {
-        setEvents(data);
-        setFilteredEvents(data);
-      })
-      .catch((error) => console.error("Error fetching events:", error));
-  }, []);
+    fetchEvents();
+  }, [currentPage]);
+
+  const fetchEvents = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("No authentication token found");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/v1/events/list-paginate?page=${currentPage}&per_page=${eventsPerPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = response.data;
+      if (result.status === "success") {
+        setEvents(result.data.data);
+        setFilteredEvents(result.data.data);
+        setPaginator(result.data.paginator);
+      } else {
+        console.error("Failed to fetch events:", result.message);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        console.error("Unauthenticated. Clearing token and redirecting.");
+        localStorage.removeItem("authToken");
+        alert("Session expired. Please log in again.");
+        window.location.href = "/login";
+      } else {
+        console.error("Error fetching events:", error);
+      }
+    }
+  };
+
+  const toggleUpdateButton = (eventId) => {
+    setVisibleUpdateButtons((prevState) => ({
+      ...prevState,
+      [eventId]: !prevState[eventId],
+    }));
+  };
+
+  const handleFilterChange = (selectedOption) => {
+    setSelectedEvent(selectedOption);
+  };
 
   const handleFilter = () => {
-    const term = searchTerm.toLowerCase();
-    const filtered = events.filter(
-      (event) =>
-        event.eventName.toLowerCase().includes(term) ||
-        event.artistName.toLowerCase().includes(term) ||
-        event.location.toLowerCase().includes(term)
-    );
-    setFilteredEvents(filtered);
-    setCurrentPage(1);
+    if (selectedEvent) {
+      const filtered = events.filter(event => event.id === selectedEvent.value);
+      setFilteredEvents(filtered);
+      setCurrentPage(1); // Reset to the first page after filtering
+    }
   };
 
   const handleClearFilter = () => {
-    setSearchTerm("");
+    setSelectedEvent(null);
     setFilteredEvents(events);
-    setCurrentPage(1);
-  };
-
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filteredEvents.slice(
-    indexOfFirstEvent,
-    indexOfLastEvent
-  );
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  const handleEdit = (event) => {
-    setModalData({ ...event });
-    setIsEditing(true);
-    setEditingEventId(event.id);
-    setShowModal(true);
+    setCurrentPage(1); // Reset to the first page after clearing
   };
 
   const handleAdd = () => {
     setModalData({
       image: null,
-      eventName: "",
-      artistName: "",
-      eventDate: "",
-      location: "",
+      title: "",
+      artist: "",
+      date: "",
       description: "",
+      location: "",
     });
     setIsEditing(false);
     setEditingEventId(null);
     setShowModal(true);
   };
 
-  const handleModalSubmit = (e) => {
-    e.preventDefault();
-    const { eventName, artistName, eventDate, location, description, image } = modalData;
+  const handleEdit = (event) => {
+    const correctedFilePath = event.file_path ? `${API_BASE_URL}${event.file_path.replace('//', '/')}` : null;
   
-    if (isEditing) {
-      // For editing, send a PUT request to update the event
-      fetch(`http://127.0.0.1:8000/api/events/${editingEventId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ eventName, artistName, eventDate, location, description, image }),
-      })
-        .then((response) => response.json())
-        .then((updatedEvent) => {
-          // Update the event in the state without re-fetching
-          const updatedEvents = events.map((event) =>
-            event.id === updatedEvent.id ? updatedEvent : event
-          );
-          setEvents(updatedEvents);
-          setFilteredEvents(updatedEvents);
-          setShowModal(false);
-          setEditingEventId(null);
-        })
-        .catch((error) => console.error("Error updating event:", error));
-    } else {
-      // For adding a new event, send a POST request
-      fetch("http://127.0.0.1:8000/api/events", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ eventName, artistName, eventDate, location, description, image }),
-      })
-        .then((response) => response.json())
-        .then((newEvent) => {
-          // Add the new event to the state
-          setEvents([...events, newEvent]);
-          setFilteredEvents([...filteredEvents, newEvent]);
-          setShowModal(false);
-        })
-        .catch((error) => console.error("Error adding new event:", error));
+    setModalData({
+      image: correctedFilePath,
+      title: event.title,
+      artist: event.artist,
+      date: event.date,
+      description: event.description,
+      location: event.location,
+    });
+    setIsEditing(true);
+    setEditingEventId(event.id);
+    setShowModal(true);
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+  
+    const fileName = file.name.split('.')[0];
+    const filePath = `uploads/modules/events/`;
+  
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await axios.post(
+        `${API_BASE_URL}/api/v1/file/file-upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          params: {
+            file_name: fileName,
+            file_path: filePath,
+          },
+        }
+      );
+  
+      const result = response.data;
+      if (result.status === "success") {
+        const correctedFilePath = `${API_BASE_URL}/${filePath}${result.data.file_path.split('/').pop()}`;
+        setModalData({ ...modalData, image: correctedFilePath });
+      } else {
+        console.error("File upload failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
     }
   };
+
+  const handleModalSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("authToken");
+    const { title, artist, date, description, location, image } = modalData;
   
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setModalData({ ...modalData, image: URL.createObjectURL(file) });
+    const apiEndpoint = isEditing
+      ? `${API_BASE_URL}/api/v1/events/update`
+      : `${API_BASE_URL}/api/v1/events/create`;
+  
+    const payload = {
+      id: editingEventId,
+      title,
+      artist,
+      date,
+      description,
+      location,
+      file_path: image ? image.replace(API_BASE_URL, '') : modalData.image,
+    };
+  
+    try {
+      const response = await axios({
+        url: apiEndpoint,
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data: payload,
+      });
+  
+      const result = response.data;
+      if (result.status === "success") {
+        fetchEvents();
+        setShowModal(false);
+        setEditingEventId(null);
+      } else {
+        console.error("Failed to save event:", result.message);
+      }
+    } catch (error) {
+      console.error("Error saving event:", error);
+    }
+  };
+
+  
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   const renderPagination = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(filteredEvents.length / eventsPerPage); i++) {
-      pageNumbers.push(i);
-    }
     return (
-      <ul className="pagination">
-        {pageNumbers.map((number) => (
-          <li
-            key={number}
-            className={`page-item ${currentPage === number ? "active" : ""}`}
-          >
-            <Button className="page-link" onClick={() => paginate(number)}>
-              {number}
-            </Button>
-          </li>
-        ))}
-      </ul>
+      <Paginate
+        paginator={paginator}
+        currentPage={currentPage}
+        pagechanged={handlePageChange}
+      />
     );
   };
 
   const renderEventRows = () => {
-    return currentEvents.map((event) => (
-      <tr key={event.id}>
-        <td>
-          <img
-            src={event.image}
-            alt={event.eventName}
-            style={{ width: "50px", height: "50px", objectFit: "cover" }}
-          />
-        </td>
-        <td>{event.eventName}</td>
-        <td>{event.artistName}</td>
-        <td>{event.eventDate}</td>
-        <td>{event.location}</td>
-        <td>{event.description}</td>
-        <td className="text-center">
-          <Dropdown>
-            <Dropdown.Toggle variant="link" className="text-decoration-none p-0">
-              <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-            </Dropdown.Toggle>
+    return filteredEvents.map((event) => {
+      const correctedFilePath = event.file_path ? `${API_BASE_URL}${event.file_path.replace('//', '/')}` : "";
 
-            <Dropdown.Menu>
-              <Dropdown.Item onClick={() => handleEdit(event)} className="text-primary">
-                Update
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </td>
-      </tr>
-    ));
+      return (
+        <tr key={event.id}>
+          <td>
+            <img
+              src={correctedFilePath}
+              alt={event.title}
+              style={{ width: "50px", height: "50px", objectFit: "cover" }}
+            />
+          </td>
+          <td>{event.title}</td>
+          <td>{event.artist}</td>
+          <td>{event.date}</td>
+          <td>{event.description}</td>
+          <td>{event.location}</td>
+          <td className="text-center">
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="link"
+                className="text-decoration-none p-0"
+                id={`dropdown-${event.id}`}
+                onClick={() => toggleUpdateButton(event.id)}
+              >
+                <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu show={visibleUpdateButtons[event.id]}>
+                <Dropdown.Item
+                  onClick={() => handleEdit(event)}
+                  className="text-primary"
+                >
+                  Update
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </td>
+        </tr>
+      );
+    });
   };
 
   return (
-    <div className="container mt-4" style={{ padding: "10%", marginLeft: "10%" }}>
-      <h1>Event Page</h1>
-      <Form.Group className="d-flex align-items-center mb-3">
-        <Form.Control
-          type="text"
-          placeholder="Filter by event name, artist, or location..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="me-2"
+    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue' }}>
+      <h1>Events</h1>
+      <div className="mb-3 d-flex align-items-center">
+        <Select
+          className="form-control me-2"
+          placeholder="Search events..."
+          value={selectedEvent}
+          onChange={handleFilterChange}
+          options={events.map(event => ({ value: event.id, label: event.title }))}
         />
-        <Button variant="secondary" className="me-2" onClick={handleFilter}>
-          Filter
+        <Button
+          variant="secondary"
+          className="me-2 d-flex align-items-center"
+          onClick={handleFilter}
+        >
+           <i className="fa-solid fa-filter me-1"></i> Filter
         </Button>
-        <Button variant="outline-danger" onClick={handleClearFilter}>
-          Clear
+        <Button
+          variant="outline-danger"
+          className="d-flex align-items-center"
+          onClick={handleClearFilter}
+        >
+          <i className="fa-solid fa-times me-1"></i> Clear
         </Button>
-      </Form.Group>
+      </div>
       <Button variant="primary" onClick={handleAdd} className="mb-3">
         Create New Event
       </Button>
@@ -208,77 +304,83 @@ const EventPage = () => {
         <thead>
           <tr>
             <th>Image</th>
-            <th>Event Name</th>
+            <th>Title</th>
             <th>Artist</th>
             <th>Date</th>
-            <th>Location</th>
             <th>Description</th>
+            <th>Location</th>
             <th className="text-center">Actions</th>
           </tr>
         </thead>
         <tbody>{renderEventRows()}</tbody>
       </Table>
-      {renderPagination()}
-      {/* Modal */}
+      {paginator?.total_pages > 1 && renderPagination()}
+
+      {/* Modal Component */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? "Update Event" : "Create New Event"}</Modal.Title>
+          <Modal.Title>
+            {isEditing ? "Update Event" : "Create New Event"}
+          </Modal.Title>
         </Modal.Header>
+
         <Modal.Body>
           <Form onSubmit={handleModalSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Event Name</Form.Label>
+              <Form.Label>Upload Image</Form.Label>
+              {modalData.image && (
+                <div className="mb-3">
+                  <img
+                    src={modalData.image}
+                    alt="Current"
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                  />
+                </div>
+              )}
+              <Form.Control type="file" onChange={handleFileChange} />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Title</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter event name"
-                value={modalData.eventName}
+                value={modalData.title}
                 onChange={(e) =>
-                  setModalData({ ...modalData, eventName: e.target.value })
+                  setModalData({ ...modalData, title: e.target.value })
                 }
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Artist Name</Form.Label>
+              <Form.Label>Artist</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter artist name"
-                value={modalData.artistName}
+                value={modalData.artist}
                 onChange={(e) =>
-                  setModalData({ ...modalData, artistName: e.target.value })
+                  setModalData({ ...modalData, artist: e.target.value })
                 }
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Event Date</Form.Label>
+              <Form.Label>Date</Form.Label>
               <Form.Control
                 type="date"
-                value={modalData.eventDate}
+                value={modalData.date}
                 onChange={(e) =>
-                  setModalData({ ...modalData, eventDate: e.target.value })
+                  setModalData({ ...modalData, date: e.target.value })
                 }
                 required
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Location</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter location"
-                value={modalData.location}
-                onChange={(e) =>
-                  setModalData({ ...modalData, location: e.target.value })
-                }
-                required
-              />
-            </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
-                placeholder="Enter description"
                 value={modalData.description}
                 onChange={(e) =>
                   setModalData({ ...modalData, description: e.target.value })
@@ -286,29 +388,27 @@ const EventPage = () => {
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Upload Image</Form.Label>
+              <Form.Label>Location</Form.Label>
               <Form.Control
-                type="file"
-                onChange={handleFileChange}
-                required={!isEditing}
+                type="text"
+                value={modalData.location}
+                onChange={(e) =>
+                  setModalData({ ...modalData, location: e.target.value })
+                }
+                required
               />
-              {modalData.image && (
-                <img
-                  src={modalData.image}
-                  alt="Preview"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    marginTop: "10px",
-                    objectFit: "cover",
-                  }}
-                />
-              )}
             </Form.Group>
-            <Button variant="primary" type="submit">
-              {isEditing ? "Update" : "Add"} Event
-            </Button>
+
+            <div className="text-end">
+              <Button variant="secondary" onClick={() => setShowModal(false)}>
+                Close
+              </Button>
+              <Button type="submit" variant="primary" className="ms-2">
+                {isEditing ? "Update Event" : "Create Event"}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
       </Modal>

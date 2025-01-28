@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Dropdown } from 'react-bootstrap';
 import axios from 'axios';
 
-const Sliders = () => {
-  const [sliders, setSliders] = useState([]);
+const Ads = () => {
+  const [ads, setAds] = useState([]);
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [currentSliderId, setCurrentSliderId] = useState(null);
+  const [currentAdId, setCurrentAdId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [uploadedFilePath, setUploadedFilePath] = useState('');
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
-  const filePath = `uploads/modules/home-main-slider/`;
+  const filePath = `uploads/modules/home-ads/`;
 
   useEffect(() => {
-    fetchSliders();
+    fetchAds();
   }, []);
 
-  const fetchSliders = async () => {
+  const fetchAds = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       console.error("No authentication token found");
@@ -27,7 +27,7 @@ const Sliders = () => {
     }
   
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/v1/home-main-slider/list-paginate`, {
+      const response = await axios.get(`${API_BASE_URL}/api/v1/home-ads/list-paginate`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -35,9 +35,9 @@ const Sliders = () => {
   
       const result = response.data;
       if (result.status === "success") {
-        setSliders(result.data.data || []);
+        setAds(result.data.data || []);
       } else {
-        console.error("Failed to fetch sliders:", result.message);
+        console.error("Failed to fetch ads:", result.message);
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -46,7 +46,7 @@ const Sliders = () => {
         alert("Session expired. Please log in again.");
         window.location.href = "/login";
       } else {
-        console.error("Error fetching sliders:", error);
+        console.error("Error fetching ads:", error);
       }
     }
   };
@@ -81,7 +81,7 @@ const Sliders = () => {
 
       const result = response.data;
       if (result.status === "success") {
-        const uploadedPath = `${API_BASE_URL}/${filePath}${result.data.file_path.split('/').pop()}`;
+        const uploadedPath = `${filePath}${result.data.file_path.split('/').pop()}`;
         setUploadedFilePath(uploadedPath);
       } else {
         console.error("File upload failed:", result.message);
@@ -97,16 +97,16 @@ const Sliders = () => {
     try {
       const token = localStorage.getItem("authToken");
       if (isEditing) {
-        await axios.put(`${API_BASE_URL}/api/v1/home-main-slider/update`, { id: currentSliderId, file_name: fileName, file_path: uploadedFilePath }, {
+        await axios.put(`${API_BASE_URL}/api/v1/home-ads/update`, { id: currentAdId, file_name: fileName, file_path: uploadedFilePath }, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
         setIsEditing(false);
-        setCurrentSliderId(null);
+        setCurrentAdId(null);
       } else {
-        await axios.post(`${API_BASE_URL}/api/v1/home-main-slider/create`, { file_name: fileName, file_path: uploadedFilePath }, {
+        await axios.post(`${API_BASE_URL}/api/v1/home-ads/create`, { file_name: fileName, file_path: uploadedFilePath }, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -114,7 +114,7 @@ const Sliders = () => {
         });
       }
 
-      fetchSliders(); // Refresh the list after upload
+      fetchAds(); // Refresh the list after upload
       setShowModal(false);
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -123,7 +123,7 @@ const Sliders = () => {
 
   const handleEdit = (id) => {
     setIsEditing(true);
-    setCurrentSliderId(id);
+    setCurrentAdId(id);
     setShowModal(true);
   };
 
@@ -132,22 +132,22 @@ const Sliders = () => {
     setFileName('');
     setUploadedFilePath('');
     setIsEditing(false);
-    setCurrentSliderId(null);
+    setCurrentAdId(null);
     setShowModal(true);
   };
 
-  const toggleUpdateButton = (sliderId) => {
+  const toggleUpdateButton = (adId) => {
     setVisibleUpdateButtons((prevState) => ({
       ...prevState,
-      [sliderId]: !prevState[sliderId],
+      [adId]: !prevState[adId],
     }));
   };
 
   return (
     <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden' }}>
-      <h1>Sliders</h1>
+      <h1>Ads</h1>
       <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Slider
+        Create New Ad
       </Button>
       <Table bordered>
         <thead>
@@ -157,26 +157,26 @@ const Sliders = () => {
           </tr>
         </thead>
         <tbody>
-          {sliders.length > 0 ? (
-            sliders.map((slider) => (
-              <tr key={slider.id}>
+          {ads.length > 0 ? (
+            ads.map((ad) => (
+              <tr key={ad.id}>
                 <td>
-                  <img src={`${slider.file_path}`} alt={slider.file_name} width="100" />
+                  <img src={`${API_BASE_URL}/${ad.file_path}`} alt={ad.file_name} width="100" />
                 </td>
                 <td className="text-center">
                   <Dropdown>
                     <Dropdown.Toggle
                       variant="link"
                       className="text-decoration-none p-0"
-                      id={`dropdown-${slider.id}`}
-                      onClick={() => toggleUpdateButton(slider.id)}
+                      id={`dropdown-${ad.id}`}
+                      onClick={() => toggleUpdateButton(ad.id)}
                     >
                       <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
                     </Dropdown.Toggle>
 
-                    <Dropdown.Menu show={visibleUpdateButtons[slider.id]}>
+                    <Dropdown.Menu show={visibleUpdateButtons[ad.id]}>
                       <Dropdown.Item
-                        onClick={() => handleEdit(slider.id)}
+                        onClick={() => handleEdit(ad.id)}
                         className="text-primary"
                       >
                         Update
@@ -188,7 +188,7 @@ const Sliders = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="2">No sliders available</td>
+              <td colSpan="2">No ads available</td>
             </tr>
           )}
         </tbody>
@@ -198,7 +198,7 @@ const Sliders = () => {
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {isEditing ? "Update Slider" : "Create New Slider"}
+            {isEditing ? "Update Ad" : "Create New Ad"}
           </Modal.Title>
         </Modal.Header>
 
@@ -213,7 +213,7 @@ const Sliders = () => {
                 Close
               </Button>
               <Button type="submit" variant="primary" className="ms-2">
-                {isEditing ? "Update Slider" : "Create Slider"}
+                {isEditing ? "Update Ad" : "Create Ad"}
               </Button>
             </div>
           </form>
@@ -223,4 +223,4 @@ const Sliders = () => {
   );
 };
 
-export default Sliders;
+export default Ads;

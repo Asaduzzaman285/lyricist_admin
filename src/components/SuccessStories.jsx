@@ -1,372 +1,375 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Dropdown } from "react-bootstrap";
-import axios from 'axios';  
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Form, Table } from 'react-bootstrap';
+import axios from 'axios';
+import Select from 'react-select';
+import Paginate from './Paginate';
 
-// Modal Component
-const UserModal = ({ show, handleClose, handleSubmit, modalData, setModalData, isEditing }) => {
-  return (
-    <Modal show={show} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>{isEditing ? "Update User" : "Create New User"}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="formName">
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter name"
-              value={modalData.name}
-              onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formEmail">
-            <Form.Label>Email</Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="Enter email"
-              value={modalData.email}
-              onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formPhone">
-            <Form.Label>Phone</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter phone"
-              value={modalData.phone}
-              onChange={(e) => setModalData({ ...modalData, phone: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formRole">
-            <Form.Label>Role</Form.Label>
-            <Form.Control
-              as="select"
-              value={modalData.role_ids}
-              onChange={(e) => setModalData({ ...modalData, role_ids: [e.target.value] })}
-              required
-            >
-              <option value="">Select role</option>
-              <option value="1">Admin</option>
-              <option value="2">PMO</option>
-              <option value="3">Handset User</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="formStatus">
-            <Form.Label>Status</Form.Label>
-            <Form.Control
-              as="select"
-              value={modalData.status}
-              onChange={(e) => setModalData({ ...modalData, status: e.target.value })}
-              required
-            >
-              <option value="">Select status</option>
-              <option value="1">Active</option>
-              <option value="0">Inactive</option>
-            </Form.Control>
-          </Form.Group>
-          {!isEditing && (
-            <Form.Group className="mb-3" controlId="formPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter password"
-                value={modalData.password}
-                onChange={(e) => setModalData({ ...modalData, password: e.target.value })}
-                required
-              />
-            </Form.Group>
-          )}
-          <Button variant="primary" type="submit">
-            {isEditing ? "Update" : "Add"} User
-          </Button>
-        </Form>
-      </Modal.Body>
-    </Modal>
-  );
-};
-
-// Main UserPage Component
-const UserPage = () => {
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+const SuccessStories = () => {
+  const [stories, setStories] = useState([]);
+  const [filteredStories, setFilteredStories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMember, setSelectedMember] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(6);
-
-  // Modal State
+  const [storiesPerPage] = useState(10);
+  const [paginator, setPaginator] = useState({});
   const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState({ name: "", email: "", phone: "", role_ids: [], status: "", password: "" });
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingUserId, setEditingUserId] = useState(null);
-
-  // State to track visibility of update buttons
-  const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
-
-  // Fetch data from API
-  useEffect(() => {
-    console.log("Fetching data...");
-    const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
-    console.log("Token:", token);
-    axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
-    axios.defaults.headers.post['Content-Type'] = 'application/json';
-    axios.post("http://192.168.1.177:84/api/v1/getAllUsers_p", {}, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
-    })
-    .then((response) => {
-      console.log("Response received:", response);
-      setUsers(response.data.data); // Adjusted to match your API response structure
-      setFilteredUsers(response.data.data);
-    })
-    .catch((error) => {
-      console.error('Error fetching data:', error);
-    });
-  }, []);
-
-  // Filter users
-  const handleFilterChange = (e) => {
-    setSearchTerm(e.target.value);
-    const term = e.target.value.toLowerCase();
-    const filtered = users.filter(
-      (user) => user.name.toLowerCase().includes(term) || (user.phone && user.phone.toLowerCase().includes(term))
-    );
-    setFilteredUsers(filtered);
-  };
-
-  // Paginate users
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-
-  // Handle page change
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Toggle visibility of update button
-  const toggleUpdateButton = (userId) => {
-    setVisibleUpdateButtons((prevState) => ({
-      ...prevState,
-      [userId]: !prevState[userId],
-    }));
-  };
-
-  // Render user rows
-  const renderUserRows = () => {
-    return currentUsers.map((user) => (
-      <tr key={user.id}>
-        <td>{user.name}</td>
-        <td>{user.phone}</td>
-        <td>{user.email}</td>
-        <td className="text-center">
-          <Dropdown>
-            <Dropdown.Toggle
-              variant="link"
-              className="text-decoration-none p-0"
-              id={`dropdown-${user.id}`}
-              onClick={() => toggleUpdateButton(user.id)}
-            >
-              <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu show={visibleUpdateButtons[user.id]}>
-              <Dropdown.Item
-                onClick={() => handleEdit(user)}
-                className="text-primary"
-              >
-                Update
-              </Dropdown.Item>
-             
-            </Dropdown.Menu>
-          </Dropdown>
-        </td>
-      </tr>
-    ));
-  };
-// Handle Add New User
-const handleAdd = () => {
-  setModalData({ name: "", email: "", phone: "", role_ids: [], status: "", password: "" });
-  setIsEditing(false);
-  setEditingUserId(null);
-  setShowModal(true);
-};
-
-// Handle Edit
-const handleEdit = (user) => {
-  setModalData({
-    ...user,
-    role_ids: user.role_ids || [], // Ensure role_ids is set correctly
-    password: "" // Clear password field when editing
+  const [modalData, setModalData] = useState({
+    image: null,
+    headline: "",
+    subheading: "",
+    details: "",
+    date: "",
+    member_id: null,
   });
-  setIsEditing(true);
-  setEditingUserId(user.id);
-  setShowModal(true);
-};
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingStoryId, setEditingStoryId] = useState(null);
+  const [filterOptions, setFilterOptions] = useState([]);
+  const [memberOptions, setMemberOptions] = useState([]);
+  const [filterKey, setFilterKey] = useState(0);
 
-// Handle Modal Submit
-const handleModalSubmit = (e) => {
-  e.preventDefault();
-  const { id, name, email, phone, role_ids, status, password } = modalData;
-  const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
+  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
-  if (isEditing) {
-    // Update user logic
-    axios.post(`http://192.168.1.177:84/api/v1/updateUser`, {
-      id, 
-      name,
-      email,
-      phone,
-      role_ids,
-      status
-    }, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` // Use the retrieved token
-      }
-    })
-    .then((response) => {
-      const updatedUsers = users.map((user) =>
-        user.id === id ? { ...user, name, email, phone, role_ids, status } : user
+  useEffect(() => {
+    fetchStories();
+    fetchFilterOptions();
+  }, [currentPage]);
+
+  const fetchStories = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("No authentication token found");
+      return;
+    }
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/v1/success-stories/list-paginate?page=${currentPage}&per_page=${storiesPerPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
-    })
-    .catch((error) => {
-      console.error('Error updating user:', error);
-    });
-  } else {
-    // Add new user logic
-    axios.post("http://192.168.1.177:84/api/v1/createUser", {
-      name,
-      email,
-      phone,
-      role_ids,
-      status,
-      password
-    }, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` // Use the retrieved token
+      const result = response.data;
+      if (result.status === "success") {
+        setStories(result.data.data);
+        setFilteredStories(result.data.data);
+        setPaginator(result.data.paginator);
+      } else {
+        console.error("Failed to fetch stories:", result.message);
       }
-    })
-    .then((response) => {
-      const newUser = { id: response.data.id, name, email, phone, role_ids, status };
-      setUsers([...users, newUser]);
-      setFilteredUsers([...users, newUser]);
-    })
-    .catch((error) => {
-      console.error('Error creating user:', error);
+    } catch (error) {
+      console.error("Error fetching stories:", error);
+    }
+  };
+
+  const fetchFilterOptions = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("No authentication token found");
+      return;
+    }
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/v1/success-stories/filter-data`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = response.data;
+      if (result.status === "success") {
+        setFilterOptions(result.data.headline);
+        setMemberOptions(result.data.members);
+      } else {
+        console.error("Failed to fetch filter options:", result.message);
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+    }
+  };
+
+  const handleFileUpload = async (file) => {
+    const token = localStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("file", file);
+    const fileName = file.name.split('.')[0];
+    const filePath = `uploads/modules/success-stories/`;
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/v1/file/file-upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          params: {
+            file_name: fileName,
+            file_path: filePath,
+          },
+        }
+      );
+      const result = response.data;
+      if (result.status === "success") {
+        const correctedFilePath = `/${filePath}${result.data.file_path.split('/').pop()}`;
+        setModalData({ ...modalData, image: correctedFilePath });
+      } else {
+        console.error("File upload failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
+  };
+
+  const handleFilterChange = (selectedOption, filterType) => {
+    if (filterType === 'headline') {
+      setSearchTerm(selectedOption ? selectedOption.label : "");
+    } else if (filterType === 'member') {
+      setSelectedMember(selectedOption ? selectedOption.value : null);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = stories;
+
+    if (searchTerm) {
+      filtered = filtered.filter(story =>
+        story.headline.toLowerCase() === searchTerm.toLowerCase()
+      );
+    }
+
+    if (selectedMember) {
+      filtered = filtered.filter(story => story.member_id === selectedMember);
+    }
+
+    setFilteredStories(filtered);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilter = () => {
+    setSearchTerm("");
+    setSelectedMember(null);
+    setFilteredStories(stories);
+    setCurrentPage(1);
+    setFilterKey(prevKey => prevKey + 1);
+  };
+
+  const handleAdd = () => {
+    setModalData({
+      image: null,
+      headline: "",
+      subheading: "",
+      details: "",
+      date: "",
+      member_id: null,
     });
-  }
+    setIsEditing(false);
+    setEditingStoryId(null);
+    setShowModal(true);
+  };
 
-  setShowModal(false);
-  setEditingUserId(null);
-};
-  // // Handle Delete
-  // const handleDelete = (id) => {
-  //   const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
-  //   axios.delete(`http://192.168.1.177:84/api/v1/deleteUser/${id}`, {
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Authorization": `Bearer ${token}` // Use the retrieved token
-  //     }
-  //   })
-  //   .then(() => {
-  //     const updatedUsers = users.filter((user) => user.id !== id);
-  //     setUsers(updatedUsers);
-  //     setFilteredUsers(updatedUsers);
-  //   })
-  //   .catch((error) => {
-  //     console.error('Error deleting user:', error);
-  //   });
-  // };
+  const handleEdit = (story) => {
+    const correctedFilePath = story.file_path.startsWith(API_BASE_URL)
+      ? story.file_path
+      : `${API_BASE_URL}${story.file_path.replace('//', '/')}`;
+    setModalData({
+      image: correctedFilePath,
+      headline: story.headline,
+      subheading: story.subheading,
+      details: story.details,
+      date: story.posting_time,
+      member_id: story.member_id,
+    });
+    setIsEditing(true);
+    setEditingStoryId(story.id);
+    setShowModal(true);
+  };
 
-  // Render Pagination
-  // const renderPagination = () => {
-  //   const pageNumbers = [];
-  //   for (let i = 1; i <= Math.ceil(filteredUsers.length / usersPerPage); i++) {
-  //     pageNumbers.push(i);
-  //   }
-  //   return (
-  //     <ul className="pagination">
-  //       {pageNumbers.map((number) => (
-  //         <li key={number} className={`page-item ${currentPage === number ? "active" : ""}`}>
-  //           <Button className="page-link" onClick={() => paginate(number)}>
-  //             {number}
-  //           </Button>
-  //         </li>
-  //       ))}
-  //     </ul>
-  //   );
-  // };
+  const handleModalSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("authToken");
+    const { headline, subheading, details, date, image, member_id } = modalData;
+    const apiEndpoint = isEditing
+      ? `${API_BASE_URL}/api/v1/success-stories/update`
+      : `${API_BASE_URL}/api/v1/success-stories/create`;
+    const payload = {
+      id: editingStoryId,
+      headline,
+      subheading,
+      details,
+      posting_time: date,
+      file_path: image.startsWith(API_BASE_URL) ? image.replace(API_BASE_URL, '') : image,
+      member_id,
+    };
+    try {
+      const response = await axios({
+        url: apiEndpoint,
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data: payload,
+      });
+      const result = response.data;
+      if (result.status === "success") {
+        fetchStories();
+        setShowModal(false);
+      } else {
+        console.error("Failed to save story:", result.message);
+      }
+    } catch (error) {
+      console.error("Error saving story:", error);
+    }
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const renderStories = () => {
+    return filteredStories.map((story) => {
+      const correctedFilePath = story.file_path ? `${API_BASE_URL}${story.file_path.replace('//', '/')}` : "";
+      return (
+        <tr key={story.id}>
+          <td>{story.posting_time}</td>
+          <td>{story.headline}</td>
+          <td>{story.subheading}</td>
+          <td>{story.details}</td>
+          <td>
+            {correctedFilePath && (
+              <img
+                src={correctedFilePath}
+                alt={story.headline}
+                   style={{ width: "50px", height: "50px", objectFit: "cover" }}
+              />
+            )}
+          </td>
+          <td className="text-center">
+            <Button variant="link" onClick={() => handleEdit(story)}>
+              Edit
+            </Button>
+          </td>
+        </tr>
+      );
+    });
+  };
 
   return (
-    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%' }}>
-      <h1>User Page</h1>
-       <Form.Group className="d-flex align-items-center mb-3" style={{ width: "70%" }}>
-        <Form.Control
-          type="text"
-          placeholder="Filter by name or phone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+    <div className="container mt-1" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue' }}>
+      <h1>Success Stories</h1>
+      <Form.Group className="d-flex align-items-center mb-3">
+        <Select
+          key={`headline-${filterKey}`}
+          options={filterOptions}
+          onChange={(option) => handleFilterChange(option, 'headline')}
+          isClearable
+          placeholder="Filter by headline..."
           className="me-2"
         />
-        <Button
-          variant="secondary"
-          className="me-2 d-flex align-items-center"
-          onClick={() => {
-            const term = searchTerm.toLowerCase();
-            const filtered = users.filter(
-              (user) =>
-                user.name.toLowerCase().includes(term) ||
-                (user.phone && user.phone.toLowerCase().includes(term))
-            );
-            setFilteredUsers(filtered);
-          }}
-        >
+        <Select
+          key={`member-${filterKey}`}
+          options={memberOptions}
+          onChange={(option) => handleFilterChange(option, 'member')}
+          isClearable
+          placeholder="Filter by member..."
+          className="me-2"
+        />
+        <Button variant="secondary" className="me-2 d-flex align-items-center" onClick={applyFilters}>
           <i className="fa-solid fa-filter me-1"></i> Filter
         </Button>
-        <Button
-          variant="outline-danger"
-          className="d-flex align-items-center"
-          onClick={() => {
-            setSearchTerm("");
-            setFilteredUsers(users);
-          }}
-        >
-          <i className="fa-solid fa-times me-1"></i> Clear
+        <Button variant="outline-danger" onClick={handleClearFilter} className="ms-2">
+          Clear
         </Button>
       </Form.Group>
-
       <Button variant="primary" onClick={handleAdd} className="mb-3">
-        <i className="fa-solid fa-plus"></i> Create New User
+        Create New Story
       </Button>
-
-      <table className="table table-bordered">
+      <Table bordered>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Email</th>
+            <th>Date</th>
+            <th>Headline</th>
+            <th>Subheading</th>
+            <th>Details</th>
+            <th>Image</th>
             <th className="text-center">Actions</th>
           </tr>
         </thead>
-        <tbody>{renderUserRows()}</tbody>
-      </table>
-      {renderPagination()}
-      <UserModal
-        show={showModal}
-        handleClose={() => setShowModal(false)}
-        handleSubmit={handleModalSubmit}
-        modalData={modalData}
-        setModalData={setModalData}
-        isEditing={isEditing}
-      />
+        <tbody>{renderStories()}</tbody>
+      </Table>
+      {paginator?.total_pages > 1 && <Paginate paginator={paginator} currentPage={currentPage} pagechanged={handlePageChange} />}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{isEditing ? "Update Story" : "Create New Story"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleModalSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Date <span style={{ color: 'red' }}>*</span></Form.Label>
+              <Form.Control
+                type="date"
+                value={modalData.date}
+                onChange={(e) => setModalData({ ...modalData, date: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Headline <span style={{ color: 'red' }}>*</span></Form.Label>
+              <Form.Control
+                type="text"
+                value={modalData.headline}
+                onChange={(e) => setModalData({ ...modalData, headline: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Subheading <span style={{ color: 'red' }}>*</span></Form.Label>
+              <Form.Control
+                type="text"
+                value={modalData.subheading}
+                onChange={(e) => setModalData({ ...modalData, subheading: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Details <span style={{ color: 'red' }}>*</span></Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={modalData.details}
+                onChange={(e) => setModalData({ ...modalData, details: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Member <span style={{ color: 'red' }}>*</span></Form.Label>
+              <Select
+                options={memberOptions}
+                value={memberOptions.find(option => option.value === modalData.member_id)}
+                onChange={(selectedOption) => setModalData({ ...modalData, member_id: selectedOption ? selectedOption.value : null })}
+                isClearable
+                placeholder="Select a member..."
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Upload Image <span style={{ color: 'red' }}>*</span></Form.Label>
+              {modalData.image && (
+                <div className="mb-3">
+                  <img
+                    src={modalData.image}
+                    alt="Current"
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                  />
+                </div>
+              )}
+              <Form.Control type="file" onChange={(e) => handleFileUpload(e.target.files[0])} />
+            </Form.Group>
+            <Button type="submit">{isEditing ? "Update" : "Create"}</Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
-export default UserPage;
+export default SuccessStories;

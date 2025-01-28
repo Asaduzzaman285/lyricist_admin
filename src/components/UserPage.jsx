@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Dropdown } from "react-bootstrap";
+import Select from 'react-select';
 import axios from 'axios';
 import Paginate from './Paginate'; // Import the Paginate component
 
@@ -97,7 +98,7 @@ const UserModal = ({ show, handleClose, handleSubmit, modalData, setModalData, i
 const UserPage = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
   const [paginator, setPaginator] = useState({
@@ -111,7 +112,7 @@ const UserPage = () => {
     pagination_last_page: 1
   });
   const [roles, setRoles] = useState([]);
-
+  const [showPassword, setShowPassword] = useState(false);
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({ name: "", email: "", phone: "", role_ids: [], status: "", password: "" });
@@ -123,11 +124,11 @@ const UserPage = () => {
 
   // Fetch data from API
   useEffect(() => {
-    getUsersData(searchTerm, currentPage); 
+    getUsersData(currentPage); 
     getRolesData(); // Fetch roles data
-  }, [searchTerm, currentPage]); 
+  }, [currentPage]); 
 
-  const getUsersData = (search = null, page = 1) => {
+  const getUsersData = (page = 1) => {
     console.log("Fetching data...");
     const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
 
@@ -138,7 +139,7 @@ const UserPage = () => {
 
     axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
     axios.defaults.headers.post['Content-Type'] = 'application/json';
-    axios.post(`https://lyricistadminapi.wineds.com/api/v1/getAllUsers_p?page=${page}`, { search }, {
+    axios.post(`https://lyricistadminapi.wineds.com/api/v1/getAllUsers_p?page=${page}`, {}, {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}` 
@@ -185,33 +186,22 @@ const UserPage = () => {
   };
 
   // Handle filter change
-  const handleFilterChange = (e) => {
-    const searchTerm = e.target.value;
-    setSearchTerm(searchTerm);
-    const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
+  const handleFilterChange = (selectedOption) => {
+    setSelectedUser(selectedOption);
   };
 
   // Handle filter
   const handleFilter = () => {
-    const term = searchTerm.toLowerCase();
-    const filtered = users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term) ||
-        user.phone.toLowerCase().includes(term)
-    );
-    setFilteredUsers(filtered);
-    setCurrentPage(1); // Reset to the first page after filtering
+    if (selectedUser) {
+      const filtered = users.filter(user => user.id === selectedUser.value);
+      setFilteredUsers(filtered);
+      setCurrentPage(1); // Reset to the first page after filtering
+    }
   };
 
   // Handle clear filter
   const handleClearFilter = () => {
-    setSearchTerm("");
+    setSelectedUser(null);
     setFilteredUsers(users);
     setCurrentPage(1); // Reset to the first page after clearing
   };
@@ -243,7 +233,7 @@ const UserPage = () => {
                   variant="link"
                   className="text-decoration-none p-0"
                   id={`dropdown-${user.id}`}
-                  onClick={() => toggleUpdateButton(user.id)}
+                                    onClick={() => toggleUpdateButton(user.id)}
               >
                   <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
               </Dropdown.Toggle>
@@ -344,15 +334,15 @@ handleClose();
 const handleClose = () => setShowModal(false);
 
 return (
-<div className="container mt-4" style={{ padding: '10%', marginLeft: '10%' }} >
-  <h1 className="my-4">Users</h1>
+<div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden' }}>
+  <h1>Users</h1>
   <div className="mb-3 d-flex align-items-center">
-    <Form.Control
-      type="text"
+    <Select
       className="form-control me-2"
       placeholder="Search users..."
-      value={searchTerm}
+      value={selectedUser}
       onChange={handleFilterChange}
+      options={users.map(user => ({ value: user.id, label: user.name }))}
     />
     <Button
       variant="secondary"
@@ -369,7 +359,11 @@ return (
       <i className="fa-solid fa-times me-1"></i> Clear
     </Button>
   </div>
-  <table className="table table-bordered">
+  
+  <Button onClick={handleAdd} variant="primary" className="mt-1">
+    Add New User
+  </Button>
+  <table className="table table-bordered mt-1 ">
     <thead>
       <tr>
         <th>#</th>
@@ -392,10 +386,6 @@ return (
     />
   )}
 
-  <Button onClick={handleAdd} variant="primary" className="mt-3">
-    Add New User
-  </Button>
-
   <UserModal
     show={showModal}
     handleClose={handleClose}
@@ -403,7 +393,7 @@ return (
     modalData={modalData}
     setModalData={setModalData}
     isEditing={isEditing}
-    roles={roles} // Pass roles to the modal
+    roles={roles} 
   />
 </div>
 );
