@@ -7,6 +7,7 @@ import Contentpage from '../components/Contentpage';
 import SuccessStories from '../components/SuccessStories';
 import Sliders from '../components/Sliders';
 import Ads from '../components/Ads';
+import Orders from '../components/Orders';
 
 const routes = [
   { path: '/admin/home', exact: true, name: 'Homepage', component: <Homepage /> },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/admin/success_stories', exact: true, name: 'SuccessStories', component: <SuccessStories /> },
   { path: 'admin/sliders', exact: true, name: 'Sliders', component: <Sliders /> },
   { path: 'admin/ads', exact: true, name: 'Ads', component: <Ads /> },
+  { path: 'admin/orders', exact: true, name: 'Orders', component: <Orders /> },
 
 
 ];

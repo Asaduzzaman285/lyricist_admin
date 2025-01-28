@@ -272,7 +272,7 @@ const EventPage = () => {
   };
 
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue' }}>
+    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue',minHeight: '100vh' }}>
       <h1>Events</h1>
       <div className="mb-3 d-flex align-items-center">
         <Select

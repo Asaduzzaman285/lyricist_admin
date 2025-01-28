@@ -348,7 +348,7 @@ handleClose();
 const handleClose = () => setShowModal(false);
 
 return (
-<div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden' }}>
+<div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh'}}>
   <h1>Users</h1>
   <div className="mb-3 d-flex align-items-center">
     <Select

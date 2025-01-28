@@ -144,7 +144,7 @@ const Sliders = () => {
   };
 
   return (
-    <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden' }}>
+    <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh' }}>
       <h1>Sliders</h1>
       <Button variant="primary" onClick={handleAdd} className="mb-3">
         Create New Slider

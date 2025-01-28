@@ -29,7 +29,7 @@ const Homepage = () => {
   }, []);
 
   return (
-    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%' }}>
+    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%',minHeight: '100vh' }}>
       <h1>Dashboard</h1>
 
       <div className="row ">

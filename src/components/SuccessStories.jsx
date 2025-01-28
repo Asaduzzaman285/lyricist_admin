@@ -254,7 +254,7 @@ const SuccessStories = () => {
   };
 
   return (
-    <div className="container mt-1" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue' }}>
+    <div className="container mt-1" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue',minHeight: '100vh' }}>
       <h1>Success Stories</h1>
       <Form.Group className="d-flex align-items-center mb-3">
         <Select
