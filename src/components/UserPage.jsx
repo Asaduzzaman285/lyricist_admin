@@ -154,8 +154,17 @@ const UserPage = () => {
         } else {
             console.error('Invalid data format', response.data);
         }
+        console.log("Response received:", response);
+        if (response.data.data && response.data.data.data && response.data.data.paginator) {
+            setUsers(response.data.data.data);
+            setFilteredUsers(response.data.data.data);
+            setPaginator(response.data.data.paginator); // Set paginator data
+        } else {
+            console.error('Invalid data format', response.data);
+        }
     })
     .catch((error) => {
+        console.error('Error fetching data:', error);
         console.error('Error fetching data:', error);
     });
   };
@@ -216,6 +225,11 @@ const UserPage = () => {
 
   // Render user rows
   const renderUserRows = () => {
+    console.log('Rendering user rows...');
+    if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) {
+        console.log('No users found');
+        return <tr><td colSpan="5">No users found</td></tr>;
+    }
     console.log('Rendering user rows...');
     if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) {
         console.log('No users found');
