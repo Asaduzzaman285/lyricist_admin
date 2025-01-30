@@ -63,24 +63,24 @@ const Sidebar = () => {
             </div>
             Products
           </Link>
-          <Link className="nav-link" to="/admin/contents">
+          {/* <Link className="nav-link" to="/admin/contents">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
             </div>
             Podcasts
-          </Link>
+          </Link> */}
           <Link className="nav-link" to="/admin/success_stories">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
             </div>
             Success Stories
           </Link>
-          <Link className="nav-link" to="/admin/contents">
+          {/* <Link className="nav-link" to="/admin/contents">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>
             </div>
             Ec Commitee
-          </Link>
+          </Link> */}
           
         </div>
       </div>

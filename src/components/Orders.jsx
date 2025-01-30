@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Table, Dropdown, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
-import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
+import Paginate from './Paginate';
 
 const Orders = () => {
+  // Base states
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(10); // Adjust as needed
+  const [ordersPerPage] = useState(10);
   const [paginator, setPaginator] = useState({
     current_page: 1,
     total_pages: 1,
@@ -21,105 +21,260 @@ const Orders = () => {
     pagination_last_page: 1
   });
 
+  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({});
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
-  
+  const [shipmentStatus, setShipmentStatus] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState("Unpaid");
+  const [orderStatus, setOrderStatus] = useState("Processing");
+
+  // Filter states
+  const [filterData, setFilterData] = useState({
+    order_number_list: [],
+    payment_method_list: [],
+    payment_status_list: [],
+    order_status_list: [],
+    shipment_status_list: []
+  });
+
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderStatusFilter, setOrderStatusFilter] = useState(null);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState(null);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState(null);
+  const [shipmentStatusFilter, setShipmentStatusFilter] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
+  // Initial data load
   useEffect(() => {
     fetchOrders();
+    fetchFilterData();
   }, [currentPage]);
 
-  const fetchOrders = async () => {
+  // Fetch filter data
+  const fetchFilterData = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      console.error("No authentication token found");
+      handleAuthError();
       return;
     }
 
     try {
+      const response = await axios.get(`${API_BASE_URL}/api/v1/cart/filter-data`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.status === "success") {
+        setFilterData(response.data.data);
+      }
+    } catch (error) {
+      handleApiError(error);
+    }
+  };
+
+  // Main data fetch with filters
+  const fetchOrders = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      handleAuthError();
+      return;
+    }
+
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('page', currentPage);
+      params.append('per_page', ordersPerPage);
+
+      console.log('Selected Order:', selectedOrder);
+
+      // Fix for order number filter - ensure we're using the correct value
+      if (selectedOrder?.value) {
+        params.append('order_number', selectedOrder.label); 
+      }
+      if (orderStatusFilter) params.append('order_status_id', orderStatusFilter.value);
+      if (paymentStatusFilter) params.append('payment_status_id', paymentStatusFilter.value);
+      if (paymentMethodFilter) params.append('payment_method_id', paymentMethodFilter.value);
+      if (shipmentStatusFilter) params.append('shipment_status_id', shipmentStatusFilter.value);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+
       const response = await axios.get(
-        `${API_BASE_URL}/api/v1/cart/list-paginate?page=${currentPage}&per_page=${ordersPerPage}`,
+        `${API_BASE_URL}/api/v1/cart/list-paginate?${params.toString()}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      const result = response.data;
-      if (result.status === "success") {
-        setOrders(result.data.data);
-        setFilteredOrders(result.data.data);
-        setPaginator(result.data.paginator);
-      } else {
-        console.error("Failed to fetch orders:", result.message);
+      if (response.data.status === "success") {
+        const { data, paginator: paginatorData } = response.data.data;
+        setOrders(data);
+        setFilteredOrders(data);
+        setPaginator(paginatorData);
       }
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        console.error("Unauthenticated. Clearing token and redirecting.");
-        localStorage.removeItem("authToken");
-        alert("Session expired. Please log in again.");
-        window.location.href = "/login";
-      } else {
-        console.error("Error fetching orders:", error);
-      }
+      handleApiError(error);
     }
   };
 
-  const toggleUpdateButton = (orderId) => {
-    setVisibleUpdateButtons((prevState) => ({
-      ...prevState,
-      [orderId]: !prevState[orderId],
-    }));
-  };
-
-  const handleFilterChange = (selectedOption) => {
-    setSelectedOrder(selectedOption);
-  };
-
+  // Filter handling
   const handleFilter = () => {
-    if (selectedOrder) {
-      const filtered = orders.filter(order => order.id === selectedOrder.value);
-      setFilteredOrders(filtered);
-      setCurrentPage(1); 
-    }
+    setCurrentPage(1);
+    fetchOrders();
   };
 
   const handleClearFilter = () => {
     setSelectedOrder(null);
-    setFilteredOrders(orders);
-    setCurrentPage(1); 
+    setOrderStatusFilter(null);
+    setPaymentStatusFilter(null);
+    setPaymentMethodFilter(null);
+    setShipmentStatusFilter(null);
+    setStartDate('');
+    setEndDate('');
+    setCurrentPage(1);
+    fetchOrders();
   };
 
+  // Modal handling
   const handleViewDetails = (order) => {
     setModalData(order);
+    setShipmentStatus(
+      filterData.shipment_status_list.find(
+        status => status.value === order.shipment_status_id
+      )?.label || ""
+    );
+    setPaymentStatus(order.payment_status === 2 ? "Paid" : "Unpaid");
+    setOrderStatus(
+      filterData.order_status_list.find(
+        status => status.value === order.order_status_id
+      )?.label || "Processing"
+    );
     setShowModal(true);
+  };
+
+  const handleUpdate = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      handleAuthError();
+      return;
+    }
+
+    const updatedData = {
+      id: modalData.id,
+      shipment_status_id: filterData.shipment_status_list.find(
+        status => status.label === shipmentStatus
+      )?.value || null,
+      order_status_id: filterData.order_status_list.find(
+        status => status.label === orderStatus
+      )?.value || null,
+      payment_status_id: paymentStatus === "Paid" ? 2 : 1,
+      paid_amount: paymentStatus === "Paid" ? modalData.total : 0,
+      due: paymentStatus === "Paid" ? 0 : modalData.total,
+      payment_method_id: modalData.payment_method_id,
+    };
+
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/v1/cart/update`,
+        updatedData,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json" 
+          }
+        }
+      );
+
+      if (response.data.status === "success") {
+        alert("Order updated successfully!");
+        setShowModal(false);
+        fetchOrders(); // Refresh the data
+      }
+    } catch (error) {
+      handleApiError(error);
+    }
+  };
+
+  // Error handlers
+  const handleAuthError = () => {
+    localStorage.removeItem("authToken");
+    alert("Please log in to continue.");
+    window.location.href = "/login";
+  };
+
+  const handleApiError = (error) => {
+    if (error.response?.status === 401) {
+      handleAuthError();
+    } else {
+      console.error("API Error:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+  // Utility functions
+  const toggleUpdateButton = (orderId) => {
+    setVisibleUpdateButtons(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
   };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
-  const renderPagination = () => {
-    return (
-      <Paginate
-        paginator={paginator}
-        currentPage={currentPage}
-        pagechanged={handlePageChange}
-      />
-    );
-  };
-
+  // Render functions
   const renderOrderRows = () => {
     return filteredOrders.map((order) => (
-      <tr key={order.id}>
+      <tr key={order.id} style={{ fontSize: '12px' }}>
         <td>{order.order_number}</td>
-        <td>{order.name}</td>
-        <td>{order.email}</td>
-        <td>{order.phone}</td>
-        <td>{order.total} TK</td>
+        <td>
+          <div>Name: {order.name}</div>
+          <div>Email: {order.email}</div>
+          <div>Phone: {order.phone}</div>
+          <div>Address: {order.shipping_address}</div>
+        </td>
+        <td>
+          <div>Subtotal: {order.sub_total} TK</div>
+          <div>Delivery Charge: {order.delivery_charge} TK</div>
+          <div>Total: {order.total} TK</div>
+          <div>Due: {order.due} TK</div>
+          <div>Paid Amount: {order.paid_amount} TK</div>
+          <div>
+            <span className={order.payment_status === 1 ? "badge bg-warning text-dark" : "badge bg-success text-white"}>
+              {order.payment_status === 1 ? "Unpaid" : "Paid"}
+            </span>
+          </div>
+        </td>
+        <td>
+          {order.order_detail.map(detail => (
+            <div key={detail.id}>{detail.product.name} x {detail.qty}</div>
+          ))}
+        </td>
+        <td>
+          <Table bordered className="table-sm">
+            <tbody>
+              {filterData.order_status_list.map(status => (
+                <tr key={status.value}>
+                  <td>{status.label}</td>
+                  {status.value <= order.order_status_id && (
+                    <td>
+                      <i className="fa-regular fa-circle-check" style={{ color: "green" }}></i>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </td>
+        <td>
+          {filterData.shipment_status_list.find(
+            status => status.value === order.shipment_status_id
+          )?.label || "Pending"}
+        </td>
         <td className="text-center">
           <Dropdown>
             <Dropdown.Toggle
@@ -130,13 +285,12 @@ const Orders = () => {
             >
               <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
             </Dropdown.Toggle>
-
             <Dropdown.Menu show={visibleUpdateButtons[order.id]}>
               <Dropdown.Item
                 onClick={() => handleViewDetails(order)}
                 className="text-primary"
               >
-                View Details
+                Update
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
@@ -148,50 +302,118 @@ const Orders = () => {
   return (
     <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Orders</h1>
-      <div className="mb-3 d-flex align-items-center">
-        <Select
-          className="form-control me-2"
-          placeholder="Search orders..."
-          value={selectedOrder}
-          onChange={handleFilterChange}
-          options={orders.map(order => ({ value: order.id, label: order.order_number }))}
-        />
-        <Button
-          variant="secondary"
-          className="me-2 d-flex align-items-center"
-          onClick={handleFilter}
-        >
-          <i className="fa-solid fa-filter me-1"></i> Filter
-        </Button>
-        <Button
-          variant="outline-danger"
-          className="d-flex align-items-center"
-          onClick={handleClearFilter}
-        >
-          <i className="fa-solid fa-times me-1"></i> Clear
-        </Button>
+      
+      {/* Filter Section */}
+      <div className="mb-3 d-flex flex-column">
+        <div className="d-flex align-items-center mb-2">
+          <Select
+            className="form-control me-2"
+            placeholder="Search orders..."
+            value={selectedOrder}
+            onChange={setSelectedOrder}
+            options={filterData.order_number_list}
+            isClearable
+          />
+          <Select
+            className="form-control me-2"
+            placeholder="Order Status"
+            value={orderStatusFilter}
+            onChange={setOrderStatusFilter}
+            options={filterData.order_status_list}
+            isClearable
+          />
+        </div>
+        
+        <div className="d-flex align-items-center mb-2">
+          <Select
+            className="form-control me-2"
+            placeholder="Payment Status"
+            value={paymentStatusFilter}
+            onChange={setPaymentStatusFilter}
+            options={filterData.payment_status_list}
+            isClearable
+          />
+          <Select
+            className="form-control me-2"
+            placeholder="Payment Method"
+            value={paymentMethodFilter}
+            onChange={setPaymentMethodFilter}
+            options={filterData.payment_method_list}
+            isClearable
+          />
+        </div>
+        
+        <div className="d-flex align-items-center mb-2">
+          <Select
+            className="form-control me-2"
+            placeholder="Shipment Status"
+            value={shipmentStatusFilter}
+            onChange={setShipmentStatusFilter}
+            options={filterData.shipment_status_list}
+            isClearable
+          />
+          <Form.Control
+            type="date"
+            className="form-control me-2"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <Form.Control
+            type="date"
+            className="form-control me-2"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+        
+        <div className="d-flex align-items-center">
+          <Button
+            variant="secondary"
+            className="me-2 d-flex align-items-center"
+            onClick={handleFilter}
+          >
+            <i className="fa-solid fa-filter me-1"></i> Filter
+          </Button>
+          <Button
+            variant="outline-danger"
+            className="d-flex align-items-center"
+            onClick={handleClearFilter}
+          >
+            <i className="fa-solid fa-times me-1"></i> Clear
+          </Button>
+        </div>
       </div>
-      <Table bordered>
+
+      {/* Orders Table */}
+      <Table bordered className="table-striped table-hover">
         <thead>
           <tr>
             <th>Order Number</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Total</th>
+            <th style={{ width: "80px" }}>Customer Info</th>
+            <th style={{ width: "200px" }}>Payment Info</th>
+            <th style={{ width: "60px" }}>Order Details</th>
+            <th>Order Status</th>
+            <th>Shipment Status</th>
             <th className="text-center">Actions</th>
           </tr>
         </thead>
         <tbody>{renderOrderRows()}</tbody>
       </Table>
-      {paginator?.total_pages > 1 && renderPagination()}
 
-      {/* Modal Component */}
+      {/* Pagination */}
+      {paginator?.total_pages > 1 && (
+        <Paginate
+          paginator={paginator}
+          currentPage={currentPage}
+          pagechanged={handlePageChange}
+        />
+      )}
+
+      {/* Update Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Order Details</Modal.Title>
+          <Modal.Title>Update Order</Modal.Title>
         </Modal.Header>
-
         <Modal.Body>
           {modalData && (
             <>
@@ -201,24 +423,54 @@ const Orders = () => {
               <p><strong>Phone:</strong> {modalData.phone}</p>
               <p><strong>Shipping Address:</strong> {modalData.shipping_address}</p>
               <p><strong>Total:</strong> {modalData.total} TK</p>
-              <h3>Order Details:</h3>
-              <ul>
-                {modalData.order_detail && modalData.order_detail.map(detail => (
-                  <li key={detail.id}>
-                    <p><strong>Product Name:</strong> {detail.product.name}</p>
-                    <p><strong>Price:</strong> {detail.price} TK</p>
-                    <p><strong>Quantity:</strong> {detail.qty}</p>
-                    <p><strong>Total:</strong> {detail.total} TK</p>
-                  </li>
-                ))}
-              </ul>
+              
+              <Form.Group className="mb-3">
+                <Form.Label>Shipment Status</Form.Label>
+                <Form.Control 
+                  as="select" 
+                  value={shipmentStatus}
+                  onChange={(e) => setShipmentStatus(e.target.value)}
+                >
+                    {filterData.shipment_status_list.map(status => (
+                    <option key={status.value} value={status.label}>{status.label}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Payment Status</Form.Label>
+                <Form.Control 
+                  as="select" 
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                >
+                  {filterData.payment_status_list.map(status => (
+                    <option key={status.value} value={status.label}>{status.label}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Order Status</Form.Label>
+                <Form.Control 
+                  as="select" 
+                  value={orderStatus}
+                  onChange={(e) => setOrderStatus(e.target.value)}
+                >
+                  {filterData.order_status_list.map(status => (
+                    <option key={status.value} value={status.label}>{status.label}</option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
             </>
           )}
         </Modal.Body>
-
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
+          </Button>
+          <Button variant="primary" onClick={handleUpdate}>
+            Update Order
           </Button>
         </Modal.Footer>
       </Modal>

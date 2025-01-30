@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table,Dropdown } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Dropdown } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
 import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
@@ -27,12 +27,15 @@ const MemberPage = () => {
     name: "",
     bio: "",
     videoUrl: "",
+    position: "",
+    memberStatus: { value: "2", label: "Approved" }, // Default status
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   
   const [filterOptions, setFilterOptions] = useState([]);
+  const [memberStatusOptions, setMemberStatusOptions] = useState([]);
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
@@ -78,13 +81,13 @@ const MemberPage = () => {
     }
   };
 
-    // Toggle visibility of update button
-    const toggleUpdateButton = (memberId) => {
-      setVisibleUpdateButtons((prevState) => ({
-        ...prevState,
-        [memberId]: !prevState[memberId],
-      }));
-    };
+  // Toggle visibility of update button
+  const toggleUpdateButton = (memberId) => {
+    setVisibleUpdateButtons((prevState) => ({
+      ...prevState,
+      [memberId]: !prevState[memberId],
+    }));
+  };
 
   const fetchFilterOptions = async () => {
     const token = localStorage.getItem("authToken");
@@ -102,6 +105,7 @@ const MemberPage = () => {
       const result = response.data;
       if (result.status === "success") {
         setFilterOptions(result.data.name_list);
+        setMemberStatusOptions(result.data.member_status_list);
       } else {
         console.error("Failed to fetch filter options:", result.message);
       }
@@ -137,6 +141,8 @@ const MemberPage = () => {
       name: "",
       bio: "",
       videoUrl: "",
+      position: "",
+      memberStatus: { value: "2", label: "Approved" }, // Default status
     });
     setIsEditing(false);
     setEditingMemberId(null);
@@ -145,12 +151,15 @@ const MemberPage = () => {
 
   const handleEdit = (member) => {
     const correctedFilePath = member.file_path ? `${API_BASE_URL}${member.file_path.replace('//', '/')}` : null;
-  
+    const memberStatus = memberStatusOptions.find(status => status.value === member.member_status_id) || { value: "2", label: "Approved" };
+
     setModalData({
       image: correctedFilePath,
       name: member.name,
       bio: member.bio,
       videoUrl: member.youtube_url,
+      position: member.position || "",
+      memberStatus,
     });
     setIsEditing(true);
     setEditingMemberId(member.id);
@@ -197,7 +206,7 @@ const MemberPage = () => {
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("authToken");
-    const { name, bio, videoUrl, image } = modalData;
+    const { name, bio, videoUrl, image, position, memberStatus } = modalData;
   
     const apiEndpoint = isEditing
       ? `${API_BASE_URL}/api/v1/members/update`
@@ -209,6 +218,8 @@ const MemberPage = () => {
       bio,
       youtube_url: videoUrl,
       file_path: image ? image.replace(API_BASE_URL, '') : modalData.image,
+      position,
+      member_status_id: memberStatus.value,
     };
   
     try {
@@ -252,6 +263,7 @@ const MemberPage = () => {
   const renderMemberRows = () => {
     return filteredMembers.map((member) => {
       const correctedFilePath = member.file_path ? `${API_BASE_URL}${member.file_path.replace('//', '/')}` : "";
+      const memberStatus = memberStatusOptions.find(status => status.value === member.member_status_id)?.label || "Unknown";
 
       return (
         <tr key={member.id}>
@@ -264,39 +276,36 @@ const MemberPage = () => {
           </td>
           <td>{member.name}</td>
           <td>{member.bio}</td>
-          {/* <td className="text-center">
-            <Button variant="link" onClick={() => handleEdit(member)}>
-              Edit
-            </Button>
-          </td> */}
-                <td className="text-center">
-          <Dropdown>
+          <td>{member.position}</td>
+          <td>{memberStatus}</td>
+          <td className="text-center">
+            <Dropdown>
               <Dropdown.Toggle
-                  variant="link"
-                  className="text-decoration-none p-0"
-                  id={`dropdown-${member.id}`}
-                                    onClick={() => toggleUpdateButton(member.id)}
+                variant="link"
+                className="text-decoration-none p-0"
+                id={`dropdown-${member.id}`}
+                onClick={() => toggleUpdateButton(member.id)}
               >
-                  <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
+                <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
               </Dropdown.Toggle>
 
               <Dropdown.Menu show={visibleUpdateButtons[member.id]}>
-                  <Dropdown.Item
-                      onClick={() => handleEdit(member)}
-                      className="text-primary"
-                  >
-                      Update
-                  </Dropdown.Item>
+                <Dropdown.Item
+                  onClick={() => handleEdit(member)}
+                  className="text-primary"
+                >
+                  Update
+                </Dropdown.Item>
               </Dropdown.Menu>
-          </Dropdown>
-      </td>
+            </Dropdown>
+          </td>
         </tr>
       );
     });
   };
 
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%",backgroundColor:'aliceblue',minHeight: '100vh' }}>
+    <div className="container mt-5" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Members</h1>
       <div className="mb-3 d-flex align-items-center">
         <Select
@@ -322,7 +331,7 @@ const MemberPage = () => {
         </Button>
       </div>
       <Button variant="primary" onClick={handleAdd} className="mb-3">
-      Create New Member
+        Create New Member
       </Button>
       <Table bordered>
         <thead>
@@ -330,6 +339,8 @@ const MemberPage = () => {
             <th>Image</th>
             <th>Name</th>
             <th>Bio</th>
+            <th>Position</th>
+            <th>Status</th>
             <th className="text-center">Actions</th>
           </tr>
         </thead>
@@ -394,6 +405,28 @@ const MemberPage = () => {
                 onChange={(e) =>
                   setModalData({ ...modalData, videoUrl: e.target.value })
                 }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Position</Form.Label>
+              <Form.Control
+                type="text"
+                value={modalData.position}
+                onChange={(e) =>
+                  setModalData({ ...modalData, position: e.target.value })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Status</Form.Label>
+              <Select
+                value={modalData.memberStatus}
+                onChange={(selectedOption) =>
+                  setModalData({ ...modalData, memberStatus: selectedOption })
+                }
+                options={memberStatusOptions}
               />
             </Form.Group>
 

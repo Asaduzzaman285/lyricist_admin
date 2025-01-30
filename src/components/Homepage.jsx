@@ -29,14 +29,14 @@ const Homepage = () => {
   }, []);
 
   return (
-    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%',minHeight: '100vh' }}>
+    <div className="container mt-4" style={{ padding: '10%',backgroundColor:'aliceblue', marginLeft: '10%',minHeight: '100vh' }}>
       <h1>Dashboard</h1>
 
-      <div className="row ">
+      {/* <div className="row ">
         <InfoCard  title="Total Users" count={userStats.users} />
-        <InfoCard title="Total Members" count="100" /> {/* Static data */}
-        <InfoCard title="Total Contents" count="300" /> {/* Static data */}
-      </div>
+        <InfoCard title="Total Members" count="100" /> 
+        <InfoCard title="Total Contents" count="300" /> 
+      </div> */}
     </div>
   );
 };

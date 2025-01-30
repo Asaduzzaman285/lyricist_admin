@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';  // Import axios for HTTP requests
+import axios from 'axios';
+import './Login.css'; // Import external CSS file
 
 const Login = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    email: '',  // Use lowercase 'email' to match the backend
+    email: '',
     password: '',
   });
 
@@ -30,11 +31,11 @@ const Login = () => {
         email,
         password,
       });
-  
+
       if (response.data.status === 'success') {
         localStorage.setItem('authToken', response.data.data.user.access_token);
-        localStorage.setItem('userName', response.data.data.user.name); // Store the user's name
-        navigate('/admin/home'); // Redirect to the default route
+        localStorage.setItem('userName', response.data.data.user.name);
+        navigate('/admin/home');
       } else {
         setError('Invalid email/username or password.');
       }
@@ -42,22 +43,25 @@ const Login = () => {
       setError('Something went wrong. Please try again.');
     }
   };
+
   return (
-    <div className="container d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-      <form onSubmit={handleSubmit} className="shadow p-4 rounded" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 className="text-center mb-4">Login</h2>
+    <div className="login-container">
+      <form onSubmit={handleSubmit} className="login-form">
+      <h2 className="text-center mb-4">
+  <img src="/assets/lyricist-logo.png" alt="Logo" width="150" />
+</h2>
 
         {error && <div className="alert alert-danger">{error}</div>}
 
         <div className="mb-3">
-          <label htmlFor="email" className="form-label">Email/Username</label>
+          <label htmlFor="email" className="form-label">Email</label>
           <input
             type="text"
-            name="email"  // Ensure the name is lowercase
-            id="email"    // Ensure the id is lowercase
+            name="email"
+            id="email"
             className="form-control"
-            placeholder="Enter your email or username"
-            value={formData.email}  // Make sure it's lowercase here as well
+            placeholder="Enter your email "
+            value={formData.email}
             onChange={handleChange}
           />
         </div>
@@ -76,10 +80,6 @@ const Login = () => {
         </div>
 
         <button type="submit" className="btn btn-primary w-100">Login</button>
-
-        <div className="text-center mt-3">
-          <a href="/forgot-password" className="text-decoration-none">Forgot Password?</a>
-        </div>
       </form>
     </div>
   );
