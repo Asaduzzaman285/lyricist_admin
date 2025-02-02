@@ -163,7 +163,12 @@ const Sliders = () => {
                 <td>
                   <img src={`${slider.file_path}`} alt={slider.file_name} width="100" />
                 </td>
-                <td className="text-center">
+                 <td className="text-center">
+                                    <Button variant="link" onClick={() => handleEdit(slider.id)}>
+                                    <i class="fa-solid fa-pen-to-square text-dark"></i>
+                                    </Button>
+                                  </td>
+                {/* <td className="text-center">
                   <Dropdown>
                     <Dropdown.Toggle
                       variant="link"
@@ -183,7 +188,7 @@ const Sliders = () => {
                       </Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
-                </td>
+                </td> */}
               </tr>
             ))
           ) : (

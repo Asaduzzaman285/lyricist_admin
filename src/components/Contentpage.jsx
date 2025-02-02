@@ -270,7 +270,12 @@ const ContentPage = () => {
           <td>{product.price}</td>
           <td>{product.description}</td>
           <td>{memberName}</td>
-          <td className="text-center">
+                <td className="text-center">
+                              <Button variant="link" onClick={() => handleEdit(product)}>
+                              <i class="fa-solid fa-pen-to-square text-dark"></i>
+                              </Button>
+                            </td>
+          {/* <td className="text-center">
             <Dropdown>
               <Dropdown.Toggle
                 variant="link"
@@ -290,7 +295,7 @@ const ContentPage = () => {
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </td>
+          </td> */}
         </tr>
       );
     });

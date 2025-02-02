@@ -278,7 +278,12 @@ const MemberPage = () => {
           <td>{member.bio}</td>
           <td>{member.position}</td>
           <td>{memberStatus}</td>
-          <td className="text-center">
+                 <td className="text-center">
+                              <Button variant="link" onClick={() => handleEdit(member)}>
+                              <i class="fa-solid fa-pen-to-square text-dark"></i>
+                              </Button>
+                            </td>
+          {/* <td className="text-center">
             <Dropdown>
               <Dropdown.Toggle
                 variant="link"
@@ -298,7 +303,7 @@ const MemberPage = () => {
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </td>
+          </td> */}
         </tr>
       );
     });

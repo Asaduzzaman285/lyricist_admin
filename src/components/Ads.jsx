@@ -163,7 +163,12 @@ const Ads = () => {
                 <td>
                   <img src={`${API_BASE_URL}/${ad.file_path}`} alt={ad.file_name} width="100" />
                 </td>
-                <td className="text-center">
+                      <td className="text-center">
+                                    <Button variant="link" onClick={() => handleEdit(ad.id)}>
+                                    <i class="fa-solid fa-pen-to-square text-dark"></i>
+                                    </Button>
+                                  </td>
+                {/* <td className="text-center">
                   <Dropdown>
                     <Dropdown.Toggle
                       variant="link"
@@ -183,7 +188,7 @@ const Ads = () => {
                       </Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
-                </td>
+                </td> */}
               </tr>
             ))
           ) : (

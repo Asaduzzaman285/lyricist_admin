@@ -48,13 +48,12 @@ const Orders = () => {
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
-  // Initial data load
+
   useEffect(() => {
     fetchOrders();
     fetchFilterData();
   }, [currentPage]);
 
-  // Fetch filter data
   const fetchFilterData = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -75,7 +74,6 @@ const Orders = () => {
     }
   };
 
-  // Main data fetch with filters
   const fetchOrders = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -84,14 +82,14 @@ const Orders = () => {
     }
 
     try {
-      // Build query parameters
+
       const params = new URLSearchParams();
       params.append('page', currentPage);
       params.append('per_page', ordersPerPage);
 
       console.log('Selected Order:', selectedOrder);
 
-      // Fix for order number filter - ensure we're using the correct value
+
       if (selectedOrder?.value) {
         params.append('order_number', selectedOrder.label); 
       }
@@ -120,7 +118,7 @@ const Orders = () => {
     }
   };
 
-  // Filter handling
+
   const handleFilter = () => {
     setCurrentPage(1);
     fetchOrders();
@@ -191,14 +189,14 @@ const Orders = () => {
       if (response.data.status === "success") {
         alert("Order updated successfully!");
         setShowModal(false);
-        fetchOrders(); // Refresh the data
+        fetchOrders(); 
       }
     } catch (error) {
       handleApiError(error);
     }
   };
 
-  // Error handlers
+
   const handleAuthError = () => {
     localStorage.removeItem("authToken");
     alert("Please log in to continue.");
@@ -214,7 +212,6 @@ const Orders = () => {
     }
   };
 
-  // Utility functions
   const toggleUpdateButton = (orderId) => {
     setVisibleUpdateButtons(prev => ({
       ...prev,
@@ -226,7 +223,6 @@ const Orders = () => {
     setCurrentPage(pageNumber);
   };
 
-  // Render functions
   const renderOrderRows = () => {
     return filteredOrders.map((order) => (
       <tr key={order.id} style={{ fontSize: '12px' }}>
@@ -267,6 +263,7 @@ const Orders = () => {
                   )}
                 </tr>
               ))}
+       
             </tbody>
           </Table>
         </td>
@@ -275,7 +272,12 @@ const Orders = () => {
             status => status.value === order.shipment_status_id
           )?.label || "Pending"}
         </td>
-        <td className="text-center">
+           <td className="text-center">
+                            <Button variant="link" onClick={() => handleViewDetails(order)}>
+                            <i class="fa-solid fa-pen-to-square text-dark"></i>
+                            </Button>
+                          </td>
+        {/* <td className="text-center">
           <Dropdown>
             <Dropdown.Toggle
               variant="link"
@@ -294,7 +296,7 @@ const Orders = () => {
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
-        </td>
+        </td> */}
       </tr>
     ));
   };

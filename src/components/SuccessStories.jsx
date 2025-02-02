@@ -141,7 +141,7 @@ const SuccessStories = () => {
     }
 
     setFilteredStories(filtered);
-    setCurrentPage(1);
+    // setCurrentPage(1);
   };
 
   const handleClearFilter = () => {
@@ -245,7 +245,7 @@ const SuccessStories = () => {
           </td>
           <td className="text-center">
             <Button variant="link" onClick={() => handleEdit(story)}>
-              Edit
+            <i class="fa-solid fa-pen-to-square text-dark"></i>
             </Button>
           </td>
         </tr>

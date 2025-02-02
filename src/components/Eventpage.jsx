@@ -245,7 +245,12 @@ const EventPage = () => {
           <td>{event.date}</td>
           <td>{event.description}</td>
           <td>{event.location}</td>
-          <td className="text-center">
+                 <td className="text-center">
+                              <Button variant="link" onClick={() => handleEdit(event)}>
+                              <i class="fa-solid fa-pen-to-square text-dark"></i>
+                              </Button>
+                            </td>
+          {/* <td className="text-center">
             <Dropdown>
               <Dropdown.Toggle
                 variant="link"
@@ -265,7 +270,7 @@ const EventPage = () => {
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </td>
+          </td> */}
         </tr>
       );
     });
