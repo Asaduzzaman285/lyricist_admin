@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
-import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
+import Paginate from './Paginate';
 
 const ContentPage = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(10); // Adjust as needed
+  const [productsPerPage] = useState(10);
   const [paginator, setPaginator] = useState({
     current_page: 1,
     total_pages: 1,
@@ -33,6 +34,9 @@ const ContentPage = () => {
   const [editingProductId, setEditingProductId] = useState(null);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [members, setMembers] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
@@ -117,18 +121,30 @@ const ContentPage = () => {
     setSelectedProduct(selectedOption);
   };
 
+  const handleAuthorFilterChange = (selectedOption) => {
+    setSelectedAuthor(selectedOption);
+  };
+
   const handleFilter = () => {
+    let filtered = [...products];
+    
     if (selectedProduct) {
-      const filtered = products.filter(product => product.id === selectedProduct.value);
-      setFilteredProducts(filtered);
-      setCurrentPage(1); // Reset to the first page after filtering
+      filtered = filtered.filter(product => product.id === selectedProduct.value);
     }
+    
+    if (selectedAuthor) {
+      filtered = filtered.filter(product => product.member.id === selectedAuthor.value);
+    }
+    
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
   };
 
   const handleClearFilter = () => {
     setSelectedProduct(null);
+    setSelectedAuthor(null);
     setFilteredProducts(products);
-    setCurrentPage(1); // Reset to the first page after clearing
+    setCurrentPage(1);
   };
 
   const handleAdd = () => {
@@ -168,6 +184,7 @@ const ContentPage = () => {
     const filePath = `uploads/modules/product/`;
   
     try {
+      setIsUploading(true);
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/file/file-upload`,
@@ -193,6 +210,8 @@ const ContentPage = () => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -252,6 +271,11 @@ const ContentPage = () => {
     );
   };
 
+  const handleImageClick = (src) => {
+    setImageModalSrc(src);
+    setShowImageModal(true);
+  };
+
   const renderProductRows = () => {
     return filteredProducts.map((product) => {
       const correctedFilePath = product.file_path ? `${API_BASE_URL}${product.file_path.replace('//', '/')}` : "";
@@ -263,72 +287,83 @@ const ContentPage = () => {
             <img
               src={correctedFilePath}
               alt={product.name}
-              style={{ width: "50px", height: "50px", objectFit: "cover" }}
+              style={{ width: "50px", height: "50px", objectFit: "cover", cursor: 'pointer' }}
+              onClick={() => handleImageClick(correctedFilePath)}
             />
           </td>
           <td>{product.name}</td>
           <td>{product.price}</td>
           <td>{product.description}</td>
           <td>{memberName}</td>
-                <td className="text-center">
-                              <Button variant="link" onClick={() => handleEdit(product)}>
-                              <i class="fa-solid fa-pen-to-square text-dark"></i>
-                              </Button>
-                            </td>
-          {/* <td className="text-center">
-            <Dropdown>
-              <Dropdown.Toggle
-                variant="link"
-                className="text-decoration-none p-0"
-                id={`dropdown-${product.id}`}
-                onClick={() => toggleUpdateButton(product.id)}
-              >
-                <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu show={visibleUpdateButtons[product.id]}>
-                <Dropdown.Item
-                  onClick={() => handleEdit(product)}
-                  className="text-primary"
-                >
-                  Update
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </td> */}
+          <td className="text-center">
+            <Button variant="link" onClick={() => handleEdit(product)}>
+              <i className="fa-solid fa-pen-to-square text-dark"></i>
+              </Button>
+          </td>
         </tr>
       );
     });
   };
+
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue',minHeight: '100vh' }}>
+    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Products</h1>
-      <div className="mb-3 d-flex align-items-center">
-        <Select
-          className="form-control me-2"
-          placeholder="Search products..."
-          value={selectedProduct}
-          onChange={handleFilterChange}
-          options={products.map(product => ({ value: product.id, label: product.name }))}
-        />
-        <Button
-          variant="secondary"
-          className="me-2 d-flex align-items-center"
-          onClick={handleFilter}
-        >
-          <i className="fa-solid fa-filter me-1"></i> Filter
-        </Button>
-        <Button
-          variant="outline-danger"
-          className="d-flex align-items-center"
-          onClick={handleClearFilter}
-        >
-          <i className="fa-solid fa-times me-1"></i> Clear
-        </Button>
+      <div className="mb-3">
+        <div className="row">
+          <div className="col-md-4">
+            <Select
+              className="mb-2"
+              placeholder="Search by product name..."
+              value={selectedProduct}
+              onChange={handleFilterChange}
+              options={products.map(product => ({ value: product.id, label: product.name }))}
+              isClearable
+            />
+          </div>
+          <div className="col-md-4">
+            <Select
+              className="mb-2"
+              placeholder="Search by author name..."
+              value={selectedAuthor}
+              onChange={handleAuthorFilterChange}
+              options={Array.from(new Set(products.map(product => product.member))).map(member => ({
+                value: member.id,
+                label: member.name
+              }))}
+              isClearable
+            />
+          </div>
+          <div className="col-md-2">
+            <div className="d-flex">
+              <Button
+                variant="secondary"
+                className="me-2 rounded shadow btn-md d-flex align-items-center"
+                style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+                onClick={handleFilter}
+              >
+                <i className="fa-solid fa-filter me-1"></i> Filter
+              </Button>
+              <Button
+                variant="outline-danger"
+                className="d-flex align-items-center"
+                onClick={handleClearFilter}
+              >
+                <i className="fa-solid fa-times me-1"></i> Clear
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Product
+
+      <Button
+        variant="primary"
+        onClick={handleAdd}
+        className="mb-3 rounded shadow btn-md"
+        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+      >
+        <i className="fa-solid fa-plus me-2"></i> Create New Product
       </Button>
+
       <Table bordered>
         <thead>
           <tr>
@@ -344,7 +379,6 @@ const ContentPage = () => {
       </Table>
       {paginator?.total_pages > 1 && renderPagination()}
 
-      {/* Modal Component */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>{isEditing ? "Edit Product" : "Add Product"}</Modal.Title>
@@ -353,16 +387,22 @@ const ContentPage = () => {
           <Modal.Body>
             <Form.Group className="mb-3">
               <Form.Label>Product Image</Form.Label>
-              <Form.Control type="file" onChange={handleFileChange} />
-              {modalData.image && (
-                <div className="mt-2">
-                  <img
-                    src={modalData.image}
-                    alt="Preview"
-                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                  />
+              {isUploading ? (
+                <div className="mb-3 d-flex justify-content-center">
+                  <Spinner animation="border" />
                 </div>
+              ) : (
+                modalData.image && (
+                  <div className="mb-3">
+                    <img
+                      src={modalData.image}
+                      alt="Current"
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    />
+                  </div>
+                )
               )}
+              <Form.Control type="file" onChange={handleFileChange} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Product Name</Form.Label>
@@ -420,6 +460,14 @@ const ContentPage = () => {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      {/* Image Modal */}
+      <Modal className='ms-5' show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body className="d-flex justify-content-center">
+          <img src={imageModalSrc} alt="Product" style={{ width: '100%', height: 'auto' }} />
+        </Modal.Body>
       </Modal>
     </div>
   );

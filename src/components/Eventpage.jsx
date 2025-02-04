@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
-import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
+import Paginate from './Paginate';
 
 const EventPage = () => {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedTitle, setSelectedTitle] = useState(null);
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [eventsPerPage] = useState(10); // Adjust as needed
+  const [eventsPerPage] = useState(10);
   const [paginator, setPaginator] = useState({
     current_page: 1,
     total_pages: 1,
@@ -33,6 +36,9 @@ const EventPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingEventId, setEditingEventId] = useState(null);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
@@ -77,29 +83,61 @@ const EventPage = () => {
     }
   };
 
-  const toggleUpdateButton = (eventId) => {
-    setVisibleUpdateButtons((prevState) => ({
-      ...prevState,
-      [eventId]: !prevState[eventId],
-    }));
+  const handleTitleFilterChange = (selectedOption) => {
+    setSelectedTitle(selectedOption);
   };
 
-  const handleFilterChange = (selectedOption) => {
-    setSelectedEvent(selectedOption);
+  const handleArtistFilterChange = (selectedOption) => {
+    setSelectedArtist(selectedOption);
+  };
+
+  const handleStartDateChange = (e) => {
+    setStartDate(e.target.value);
+  };
+
+  const handleEndDateChange = (e) => {
+    setEndDate(e.target.value);
   };
 
   const handleFilter = () => {
-    if (selectedEvent) {
-      const filtered = events.filter(event => event.id === selectedEvent.value);
-      setFilteredEvents(filtered);
-      setCurrentPage(1); // Reset to the first page after filtering
+    let filtered = [...events];
+    
+    // Filter by title
+    if (selectedTitle) {
+      filtered = filtered.filter(event => 
+        event.title.toLowerCase().includes(selectedTitle.label.toLowerCase())
+      );
     }
+    
+    // Filter by artist
+    if (selectedArtist) {
+      filtered = filtered.filter(event => 
+        event.artist.toLowerCase().includes(selectedArtist.label.toLowerCase())
+      );
+    }
+    
+    // Filter by date range
+    if (startDate && !endDate) {
+      filtered = filtered.filter(event => event.date >= startDate);
+    } else if (!startDate && endDate) {
+      filtered = filtered.filter(event => event.date <= endDate);
+    } else if (startDate && endDate) {
+      filtered = filtered.filter(event => 
+        event.date >= startDate && event.date <= endDate
+      );
+    }
+    
+    setFilteredEvents(filtered);
+    setCurrentPage(1);
   };
 
   const handleClearFilter = () => {
-    setSelectedEvent(null);
+    setSelectedTitle(null);
+    setSelectedArtist(null);
+    setStartDate('');
+    setEndDate('');
     setFilteredEvents(events);
-    setCurrentPage(1); // Reset to the first page after clearing
+    setCurrentPage(1);
   };
 
   const handleAdd = () => {
@@ -141,6 +179,7 @@ const EventPage = () => {
     const filePath = `uploads/modules/events/`;
   
     try {
+      setIsUploading(true);
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/file/file-upload`,
@@ -166,6 +205,8 @@ const EventPage = () => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -212,7 +253,6 @@ const EventPage = () => {
     }
   };
 
-  
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
@@ -227,6 +267,10 @@ const EventPage = () => {
     );
   };
 
+  const handleImageClick = (src) => {
+    setImageModalSrc(src);
+    setShowImageModal(true);
+  };
   const renderEventRows = () => {
     return filteredEvents.map((event) => {
       const correctedFilePath = event.file_path ? `${API_BASE_URL}${event.file_path.replace('//', '/')}` : "";
@@ -237,7 +281,8 @@ const EventPage = () => {
             <img
               src={correctedFilePath}
               alt={event.title}
-              style={{ width: "50px", height: "50px", objectFit: "cover" }}
+              style={{ width: "50px", height: "50px", objectFit: "cover", cursor: 'pointer' }}
+              onClick={() => handleImageClick(correctedFilePath)}
             />
           </td>
           <td>{event.title}</td>
@@ -245,65 +290,89 @@ const EventPage = () => {
           <td>{event.date}</td>
           <td>{event.description}</td>
           <td>{event.location}</td>
-                 <td className="text-center">
-                              <Button variant="link" onClick={() => handleEdit(event)}>
-                              <i class="fa-solid fa-pen-to-square text-dark"></i>
-                              </Button>
-                            </td>
-          {/* <td className="text-center">
-            <Dropdown>
-              <Dropdown.Toggle
-                variant="link"
-                className="text-decoration-none p-0"
-                id={`dropdown-${event.id}`}
-                onClick={() => toggleUpdateButton(event.id)}
-              >
-                <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu show={visibleUpdateButtons[event.id]}>
-                <Dropdown.Item
-                  onClick={() => handleEdit(event)}
-                  className="text-primary"
-                >
-                  Update
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </td> */}
+          <td className="text-center">
+            <Button variant="link" onClick={() => handleEdit(event)}>
+              <i className="fa-solid fa-pen-to-square text-dark"></i>
+            </Button>
+          </td>
         </tr>
       );
     });
   };
 
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue',minHeight: '100vh' }}>
+    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Events</h1>
-      <div className="mb-3 d-flex align-items-center">
-        <Select
-          className="form-control me-2"
-          placeholder="Search events..."
-          value={selectedEvent}
-          onChange={handleFilterChange}
-          options={events.map(event => ({ value: event.id, label: event.title }))}
-        />
-        <Button
-          variant="secondary"
-          className="me-2 d-flex align-items-center"
-          onClick={handleFilter}
-        >
-           <i className="fa-solid fa-filter me-1"></i> Filter
-        </Button>
-        <Button
-          variant="outline-danger"
-          className="d-flex align-items-center"
-          onClick={handleClearFilter}
-        >
-          <i className="fa-solid fa-times me-1"></i> Clear
-        </Button>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <Select
+            className="mb-2"
+            placeholder="Search by title..."
+            value={selectedTitle}
+            onChange={handleTitleFilterChange}
+            options={Array.from(new Set(events.map(event => event.title)))
+              .map(title => ({ value: title, label: title }))}
+            isClearable
+          />
+        </div>
+        <div className="col-md-6">
+          <Select
+            className="mb-2"
+            placeholder="Search by artist..."
+            value={selectedArtist}
+            onChange={handleArtistFilterChange}
+            options={Array.from(new Set(events.map(event => event.artist)))
+              .map(artist => ({ value: artist, label: artist }))}
+            isClearable
+          />
+        </div>
       </div>
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Event
+      <div className="row mb-3">
+        <div className="col-md-4">
+          <Form.Group>
+            <Form.Control
+              type="date"
+              placeholder="Start Date"
+              value={startDate}
+              onChange={handleStartDateChange}
+            />
+          </Form.Group>
+        </div>
+        <div className="col-md-4">
+          <Form.Group>
+            <Form.Control
+              type="date"
+              placeholder="End Date"
+              value={endDate}
+              onChange={handleEndDateChange}
+            />
+          </Form.Group>
+        </div>
+        <div className="col-md-4 d-flex align-items-center">
+          <Button
+            variant="secondary"
+            className="me-2 rounded shadow btn-md d-flex align-items-center justify-content-between"
+            style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+            onClick={handleFilter}
+          >
+            <i className="fa-solid fa-filter me-1"></i> Filter
+          </Button>
+          <Button
+            variant="outline-danger"
+            className="d-flex align-items-center"
+            onClick={handleClearFilter}
+          >
+            <i className="fa-solid fa-times me-1"></i> Clear
+          </Button>
+        </div>
+      </div>
+      <Button
+        variant="primary"
+        onClick={handleAdd}
+        className="mb-3 rounded shadow btn-md"
+        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+      >
+        <i className="fa-solid fa-plus me-2"></i> Create New Event
       </Button>
       <Table bordered>
         <thead>
@@ -321,7 +390,6 @@ const EventPage = () => {
       </Table>
       {paginator?.total_pages > 1 && renderPagination()}
 
-      {/* Modal Component */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -333,14 +401,20 @@ const EventPage = () => {
           <Form onSubmit={handleModalSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Upload Image</Form.Label>
-              {modalData.image && (
-                <div className="mb-3">
-                  <img
-                    src={modalData.image}
-                    alt="Current"
-                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                  />
+              {isUploading ? (
+                <div className="mb-3 d-flex justify-content-center">
+                  <Spinner animation="border" />
                 </div>
+              ) : (
+                modalData.image && (
+                  <div className="mb-3">
+                    <img
+                      src={modalData.image}
+                      alt="Current"
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    />
+                  </div>
+                )
               )}
               <Form.Control type="file" onChange={handleFileChange} />
             </Form.Group>
@@ -415,6 +489,14 @@ const EventPage = () => {
               </Button>
             </div>
           </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Image Modal */}
+      <Modal className='ms-5' show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body className="d-flex justify-content-center">
+          <img src={imageModalSrc} alt="Event" style={{ width: '100%', height: 'auto' }} />
         </Modal.Body>
       </Modal>
     </div>

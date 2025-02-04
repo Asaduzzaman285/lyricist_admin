@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
-import Paginate from './Paginate'; // Assuming Paginate component is in a sibling folder
+import Paginate from './Paginate'; 
 
 const MemberPage = () => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
-  const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedFilters, setSelectedFilters] = useState({
+    member: null,
+    status: null,
+    position: null,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [membersPerPage] = useState(10); // Adjust as needed
   const [paginator, setPaginator] = useState({
@@ -33,9 +37,13 @@ const MemberPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
   const [filterOptions, setFilterOptions] = useState([]);
   const [memberStatusOptions, setMemberStatusOptions] = useState([]);
+  const [positionOptions, setPositionOptions] = useState([]);
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
@@ -106,6 +114,7 @@ const MemberPage = () => {
       if (result.status === "success") {
         setFilterOptions(result.data.name_list);
         setMemberStatusOptions(result.data.member_status_list);
+        setPositionOptions(result.data.position_list);
       } else {
         console.error("Failed to fetch filter options:", result.message);
       }
@@ -115,24 +124,38 @@ const MemberPage = () => {
   };
 
   // Handle filter change
-  const handleFilterChange = (selectedOption) => {
-    setSelectedMember(selectedOption);
+  const handleFilterChange = (selectedOption, filterType) => {
+    setSelectedFilters((prevFilters) => ({
+      ...prevFilters,
+      [filterType]: selectedOption,
+    }));
   };
 
-  // Handle filter
+
   const handleFilter = () => {
-    if (selectedMember) {
-      const filtered = members.filter(member => member.id === selectedMember.value);
-      setFilteredMembers(filtered);
-      setCurrentPage(1); // Reset to the first page after filtering
+    let filtered = members;
+    if (selectedFilters.member) {
+      filtered = filtered.filter(member => member.id === Number(selectedFilters.member.value));
     }
+    if (selectedFilters.status) {
+      filtered = filtered.filter(member => member.member_status_id === selectedFilters.status.value);
+    }
+    if (selectedFilters.position) {
+      filtered = filtered.filter(member => member.position === selectedFilters.position.label);
+    }
+
+    setFilteredMembers(filtered);
+    setCurrentPage(1);
   };
 
-  // Handle clear filter
   const handleClearFilter = () => {
-    setSelectedMember(null);
+    setSelectedFilters({
+      member: null,
+      status: null,
+      position: null,
+    });
     setFilteredMembers(members);
-    setCurrentPage(1); // Reset to the first page after clearing
+    setCurrentPage(1); 
   };
 
   const handleAdd = () => {
@@ -142,7 +165,7 @@ const MemberPage = () => {
       bio: "",
       videoUrl: "",
       position: "",
-      memberStatus: { value: "2", label: "Approved" }, // Default status
+      memberStatus: { value: "2", label: "Approved" }, 
     });
     setIsEditing(false);
     setEditingMemberId(null);
@@ -175,6 +198,7 @@ const MemberPage = () => {
     const filePath = `uploads/modules/members/`;
   
     try {
+      setIsUploading(true);
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/file/file-upload`,
@@ -200,6 +224,8 @@ const MemberPage = () => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -249,7 +275,6 @@ const MemberPage = () => {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-
   const renderPagination = () => {
     return (
       <Paginate
@@ -260,10 +285,19 @@ const MemberPage = () => {
     );
   };
 
+  const handleImageClick = (src) => {
+    setImageModalSrc(src);
+    setShowImageModal(true);
+  };
+
   const renderMemberRows = () => {
     return filteredMembers.map((member) => {
-      const correctedFilePath = member.file_path ? `${API_BASE_URL}${member.file_path.replace('//', '/')}` : "";
-      const memberStatus = memberStatusOptions.find(status => status.value === member.member_status_id)?.label || "Unknown";
+      const correctedFilePath = member.file_path 
+        ? `${API_BASE_URL}${member.file_path.replace('//', '/')}` 
+        : "";
+      const memberStatus = memberStatusOptions.find(
+        status => status.value === member.member_status_id
+      )?.label || "Unknown";
 
       return (
         <tr key={member.id}>
@@ -271,39 +305,35 @@ const MemberPage = () => {
             <img
               src={correctedFilePath}
               alt={member.name}
-              style={{ width: "50px", height: "50px", objectFit: "cover" }}
+              style={{ width: "50px", height: "50px", objectFit: "cover", cursor: 'pointer' }}
+              onClick={() => handleImageClick(correctedFilePath)}
             />
           </td>
           <td>{member.name}</td>
           <td>{member.bio}</td>
           <td>{member.position}</td>
-          <td>{memberStatus}</td>
-                 <td className="text-center">
-                              <Button variant="link" onClick={() => handleEdit(member)}>
-                              <i class="fa-solid fa-pen-to-square text-dark"></i>
-                              </Button>
-                            </td>
-          {/* <td className="text-center">
-            <Dropdown>
-              <Dropdown.Toggle
-                variant="link"
-                className="text-decoration-none p-0"
-                id={`dropdown-${member.id}`}
-                onClick={() => toggleUpdateButton(member.id)}
+          <td style={{ textAlign: "center" }}>
+            {member.youtube_url ? (
+              <a 
+                href={member.youtube_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
               >
-                <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu show={visibleUpdateButtons[member.id]}>
-                <Dropdown.Item
-                  onClick={() => handleEdit(member)}
-                  className="text-primary"
-                >
-                  Update
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </td> */}
+                <i 
+                  className="fa-brands fa-youtube" 
+                  style={{ fontSize: "2rem", color: "red" }}
+                ></i>
+              </a>
+            ) : (
+              "N/A"
+            )}
+          </td>
+          <td>{memberStatus}</td>
+          <td className="text-center">
+            <Button variant="link" onClick={() => handleEdit(member)}>
+              <i className="fa-solid fa-pen-to-square text-dark"></i>
+            </Button>
+          </td>
         </tr>
       );
     });
@@ -316,13 +346,28 @@ const MemberPage = () => {
         <Select
           className="form-control me-2"
           placeholder="Search members..."
-          value={selectedMember}
-          onChange={handleFilterChange}
-          options={members.map(member => ({ value: member.id, label: member.name }))}
+          value={selectedFilters.member}
+          onChange={(option) => handleFilterChange(option, 'member')}
+          options={filterOptions}
+        />
+        <Select
+          className="form-control me-2"
+          placeholder="Filter by status..."
+          value={selectedFilters.status}
+          onChange={(option) => handleFilterChange(option, 'status')}
+          options={memberStatusOptions}
+        />
+        <Select
+          className="form-control me-2"
+          placeholder="Filter by position..."
+          value={selectedFilters.position}
+          onChange={(option) => handleFilterChange(option, 'position')}
+          options={positionOptions}
         />
         <Button
           variant="secondary"
-          className="me-2 d-flex align-items-center"
+          className="me-2 rounded shadow btn-md d-flex align-items-center"
+          style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
           onClick={handleFilter}
         >
           <i className="fa-solid fa-filter me-1"></i> Filter
@@ -335,8 +380,13 @@ const MemberPage = () => {
           <i className="fa-solid fa-times me-1"></i> Clear
         </Button>
       </div>
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Member
+      <Button
+        variant="primary"
+        onClick={handleAdd}
+        className="mb-3 rounded shadow btn-md"
+        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+      >
+        <i className="fa-solid fa-plus me-2"></i> Create New Member
       </Button>
       <Table bordered>
         <thead>
@@ -345,6 +395,7 @@ const MemberPage = () => {
             <th>Name</th>
             <th>Bio</th>
             <th>Position</th>
+            <th>Youtube URL</th>
             <th>Status</th>
             <th className="text-center">Actions</th>
           </tr>
@@ -353,7 +404,6 @@ const MemberPage = () => {
       </Table>
       {paginator?.total_pages > 1 && renderPagination()}
 
-      {/* Modal Component */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -365,14 +415,20 @@ const MemberPage = () => {
           <Form onSubmit={handleModalSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Upload Image</Form.Label>
-              {modalData.image && (
-                <div className="mb-3">
-                  <img
-                    src={modalData.image}
-                    alt="Current"
-                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                  />
+              {isUploading ? (
+                <div className="mb-3 d-flex justify-content-center">
+                  <Spinner animation="border" />
                 </div>
+              ) : (
+                modalData.image && (
+                  <div className="mb-3">
+                    <img
+                      src={modalData.image}
+                      alt="Current"
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    />
+                  </div>
+                )
               )}
               <Form.Control type="file" onChange={handleFileChange} />
             </Form.Group>
@@ -444,6 +500,14 @@ const MemberPage = () => {
               </Button>
             </div>
           </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Image Modal */}
+      <Modal className='ms-5' show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body className="d-flex justify-content-center">
+          <img src={imageModalSrc} alt="Member" style={{ width: '100%', height: 'auto' }} />
         </Modal.Body>
       </Modal>
     </div>

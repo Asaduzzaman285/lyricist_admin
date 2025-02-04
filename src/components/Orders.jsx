@@ -277,26 +277,7 @@ const Orders = () => {
                             <i class="fa-solid fa-pen-to-square text-dark"></i>
                             </Button>
                           </td>
-        {/* <td className="text-center">
-          <Dropdown>
-            <Dropdown.Toggle
-              variant="link"
-              className="text-decoration-none p-0"
-              id={`dropdown-${order.id}`}
-              onClick={() => toggleUpdateButton(order.id)}
-            >
-              <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-            </Dropdown.Toggle>
-            <Dropdown.Menu show={visibleUpdateButtons[order.id]}>
-              <Dropdown.Item
-                onClick={() => handleViewDetails(order)}
-                className="text-primary"
-              >
-                Update
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </td> */}
+        
       </tr>
     ));
   };
@@ -304,87 +285,89 @@ const Orders = () => {
   return (
     <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Orders</h1>
-      
-      {/* Filter Section */}
       <div className="mb-3 d-flex flex-column">
-        <div className="d-flex align-items-center mb-2">
-          <Select
-            className="form-control me-2"
-            placeholder="Search orders..."
-            value={selectedOrder}
-            onChange={setSelectedOrder}
-            options={filterData.order_number_list}
-            isClearable
-          />
-          <Select
-            className="form-control me-2"
-            placeholder="Order Status"
-            value={orderStatusFilter}
-            onChange={setOrderStatusFilter}
-            options={filterData.order_status_list}
-            isClearable
-          />
-        </div>
-        
-        <div className="d-flex align-items-center mb-2">
-          <Select
-            className="form-control me-2"
-            placeholder="Payment Status"
-            value={paymentStatusFilter}
-            onChange={setPaymentStatusFilter}
-            options={filterData.payment_status_list}
-            isClearable
-          />
-          <Select
-            className="form-control me-2"
-            placeholder="Payment Method"
-            value={paymentMethodFilter}
-            onChange={setPaymentMethodFilter}
-            options={filterData.payment_method_list}
-            isClearable
-          />
-        </div>
-        
-        <div className="d-flex align-items-center mb-2">
-          <Select
-            className="form-control me-2"
-            placeholder="Shipment Status"
-            value={shipmentStatusFilter}
-            onChange={setShipmentStatusFilter}
-            options={filterData.shipment_status_list}
-            isClearable
-          />
-          <Form.Control
-            type="date"
-            className="form-control me-2"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <Form.Control
-            type="date"
-            className="form-control me-2"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
-        
-        <div className="d-flex align-items-center">
-          <Button
-            variant="secondary"
-            className="me-2 d-flex align-items-center"
-            onClick={handleFilter}
-          >
-            <i className="fa-solid fa-filter me-1"></i> Filter
-          </Button>
-          <Button
-            variant="outline-danger"
-            className="d-flex align-items-center"
-            onClick={handleClearFilter}
-          >
-            <i className="fa-solid fa-times me-1"></i> Clear
-          </Button>
-        </div>
-      </div>
+  <div className="d-flex align-items-center mb-2">
+    <Select
+      className="form-control me-2"
+      placeholder="Search orders..."
+      value={selectedOrder}
+      onChange={setSelectedOrder}
+      options={filterData.order_number_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Order Status"
+      value={orderStatusFilter}
+      onChange={setOrderStatusFilter}
+      options={filterData.order_status_list}
+      isClearable
+    />
+  </div>
+
+  <div className="d-flex align-items-center mb-2">
+    <Select
+      className="form-control me-2"
+      placeholder="Payment Status"
+      value={paymentStatusFilter}
+      onChange={setPaymentStatusFilter}
+      options={filterData.payment_status_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Payment Method"
+      value={paymentMethodFilter}
+      onChange={setPaymentMethodFilter}
+      options={filterData.payment_method_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Shipment Status"
+      value={shipmentStatusFilter}
+      onChange={setShipmentStatusFilter}
+      options={filterData.shipment_status_list}
+      isClearable
+    />
+  </div>
+
+  <div className="row mb-2">
+    <div className="col-md-4">
+      <Form.Control
+        type="date"
+        className="form-control me-2"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+      />
+    </div>
+    <div className="col-md-4">
+      <Form.Control
+        type="date"
+        className="form-control me-2"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+      />
+    </div>
+    <div className="col-md-4 d-flex align-items-center">
+      <Button
+        variant="secondary"
+        className="me-2 rounded shadow btn-md d-flex align-items-center"
+        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+        onClick={handleFilter}
+      >
+        <i className="fa-solid fa-filter me-1"></i> Filter
+      </Button>
+      <Button
+        variant="outline-danger"
+        className="d-flex align-items-center"
+        onClick={handleClearFilter}
+      >
+        <i className="fa-solid fa-times me-1"></i> Clear
+      </Button>
+    </div>
+  </div>
+</div>
 
       {/* Orders Table */}
       <Table bordered className="table-striped table-hover">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 
 const Ads = () => {
@@ -11,6 +11,8 @@ const Ads = () => {
   const [showModal, setShowModal] = useState(false);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [uploadedFilePath, setUploadedFilePath] = useState('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState('');
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
   const filePath = `uploads/modules/home-ads/`;
@@ -143,11 +145,16 @@ const Ads = () => {
     }));
   };
 
+  const handleImageClick = (src) => {
+    setImageModalSrc(src);
+    setShowImageModal(true);
+  };
+
   return (
     <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh' }}>
       <h1>Ads</h1>
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Ad
+      <Button variant="primary" onClick={handleAdd}  style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }} className="mb-3 rounded shadow btn-md">
+      <i className="fa-solid fa-plus me-2"></i>  Create New Ad
       </Button>
       <Table bordered>
         <thead>
@@ -161,34 +168,19 @@ const Ads = () => {
             ads.map((ad) => (
               <tr key={ad.id}>
                 <td>
-                  <img src={`${API_BASE_URL}/${ad.file_path}`} alt={ad.file_name} width="100" />
+                  <img 
+                    src={`${API_BASE_URL}/${ad.file_path}`} 
+                    alt={ad.file_name} 
+                    width="100" 
+                    style={{ cursor: 'pointer' }} 
+                    onClick={() => handleImageClick(`${API_BASE_URL}/${ad.file_path}`)} 
+                  />
                 </td>
-                      <td className="text-center">
-                                    <Button variant="link" onClick={() => handleEdit(ad.id)}>
-                                    <i class="fa-solid fa-pen-to-square text-dark"></i>
-                                    </Button>
-                                  </td>
-                {/* <td className="text-center">
-                  <Dropdown>
-                    <Dropdown.Toggle
-                      variant="link"
-                      className="text-decoration-none p-0"
-                      id={`dropdown-${ad.id}`}
-                      onClick={() => toggleUpdateButton(ad.id)}
-                    >
-                      <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-                    </Dropdown.Toggle>
-
-                    <Dropdown.Menu show={visibleUpdateButtons[ad.id]}>
-                      <Dropdown.Item
-                        onClick={() => handleEdit(ad.id)}
-                        className="text-primary"
-                      >
-                        Update
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </td> */}
+                <td className="text-center">
+                  <Button variant="link" onClick={() => handleEdit(ad.id)}>
+                    <i className="fa-solid fa-pen-to-square text-dark"></i>
+                  </Button>
+                </td>
               </tr>
             ))
           ) : (
@@ -222,6 +214,14 @@ const Ads = () => {
               </Button>
             </div>
           </form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Image Modal */}
+      <Modal show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body className="d-flex justify-content-center">
+          <img src={imageModalSrc} alt="Ad" style={{ width: '100%', height: 'auto' }} />
         </Modal.Body>
       </Modal>
     </div>

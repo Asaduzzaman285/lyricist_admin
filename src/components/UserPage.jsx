@@ -95,6 +95,8 @@ const UserPage = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
   const [paginator, setPaginator] = useState({
@@ -122,7 +124,6 @@ const UserPage = () => {
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [isFiltered, setIsFiltered] = useState(false);
   const [dropdownOptions, setDropdownOptions] = useState([]);
-
 
   const getAllUsersData = () => {
     console.log('Fetching all users...');
@@ -212,9 +213,9 @@ const UserPage = () => {
   };
 
   const getRolesData = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      console.error('No authentication token found');
+      console.error("No authentication token found");
       return;
     }
     try {
@@ -242,9 +243,18 @@ const UserPage = () => {
     setSelectedUser(selectedOption);
   };
 
+  const handleRoleFilterChange = (selectedOption) => {
+    setSelectedRole(selectedOption);
+  };
+
+  const handleStatusFilterChange = (selectedOption) => {
+    setSelectedStatus(selectedOption);
+  };
   const handleFilter = async () => {
+    const token = localStorage.getItem('authToken');
+    let filtered = users;
+
     if (selectedUser) {
-      const token = localStorage.getItem('authToken');
       try {
         const response = await axios.post('https://lyricistadminapi.wineds.com/api/v1/getUser', 
           { id: selectedUser.value },
@@ -256,17 +266,29 @@ const UserPage = () => {
           }
         );
         if (response.data?.data) {
-          setFilteredUsers([response.data.data]);
-          setIsFiltered(true);
+          filtered = [response.data.data];
         }
       } catch (error) {
         console.error('Error fetching single user:', error);
       }
     }
+
+    if (selectedRole) {
+      filtered = filtered.filter(user => user.roles.some(role => role.id === selectedRole.value));
+    }
+
+    if (selectedStatus) {
+      filtered = filtered.filter(user => user.status === selectedStatus.value);
+    }
+
+    setFilteredUsers(filtered);
+    setIsFiltered(true);
   };
 
   const handleClearFilter = () => {
     setSelectedUser(null);
+    setSelectedRole(null);
+    setSelectedStatus(null);
     setIsFiltered(false);
     setCurrentPage(1);
     getUsersData(1);
@@ -281,42 +303,31 @@ const UserPage = () => {
 
   const renderUserRows = () => {
     if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) {
-      return <tr><td colSpan="5">No users found</td></tr>;
+      return <tr><td colSpan="7">No users found</td></tr>;
     }
-    return filteredUsers.map((user, index) => (
-      <tr key={user.id}>
-        <td>{isFiltered ? user.id : ((paginator.current_page - 1) * paginator.record_per_page) + index + 1}</td>
-        <td>{user.name}</td>
-        <td>{user.phone}</td>
-        <td>{user.email}</td>
-        <td className="text-center">
-                    <Button variant="link" onClick={() => handleEdit(user)}>
-                    <i class="fa-solid fa-pen-to-square text-dark"></i>
-                    </Button>
-                  </td>
-        {/* <td className="text-center">
-          <Dropdown>
-            <Dropdown.Toggle
-              variant="link"
-              className="text-decoration-none p-0"
-              id={`dropdown-${user.id}`}
-              onClick={() => toggleUpdateButton(user.id)}
-            >
-              <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu show={visibleUpdateButtons[user.id]}>
-              <Dropdown.Item
-                onClick={() => handleEdit(user)}
-                className="text-primary"
-              >
-                Update
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </td> */}
-      </tr>
-    ));
+    return filteredUsers.map((user, index) => {
+      const roleNames = user.roles?.map(role => role.name).join(', ') || 'No Role';
+      return (
+        <tr key={user.id}>
+          <td>{isFiltered ? user.id : ((paginator.current_page - 1) * paginator.record_per_page) + index + 1}</td>
+          <td>{user.name}</td>
+          <td>{user.phone}</td>
+          <td>{roleNames}</td>
+          <td>
+  {user.status === 1 ? (
+    <span className="bg-success badge text-white px-2">Active</span>
+  ) : (
+    <span className="bg-warning badge text-dark px-2">Inactive</span>
+  )}
+</td>    <td>{user.email}</td>
+          <td className="text-center">
+            <Button variant="link" onClick={() => handleEdit(user)}>
+              <i className="fa-solid fa-pen-to-square text-dark"></i>
+            </Button>
+          </td>
+        </tr>
+      );
+    });
   };
 
   const handleAdd = () => {
@@ -332,7 +343,7 @@ const UserPage = () => {
     setEditingUserId(null);
     setShowModal(true);
   };
-  
+
   const handleEdit = (user) => {
     setModalData({
       ...user,
@@ -343,16 +354,6 @@ const UserPage = () => {
     setEditingUserId(user.id);
     setShowModal(true);
   };
-  // const handleEdit = (user) => {
-  //   setModalData({
-  //     ...user,
-  //     role_ids: user.roles?.map(role => role.id) || [],
-  //     password: ""
-  //   });
-  //   setIsEditing(true);
-  //   setEditingUserId(user.id);
-  //   setShowModal(true);
-  // };
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();
@@ -433,9 +434,29 @@ const UserPage = () => {
           options={dropdownOptions}
           isClearable
         />
+        <Select
+          className="form-control me-2"
+          placeholder="Filter by role..."
+          value={selectedRole}
+          onChange={handleRoleFilterChange}
+          options={roles.map(role => ({ value: role.id, label: role.name }))}
+          isClearable
+        />
+        <Select
+          className="form-control me-2"
+          placeholder="Filter by status..."
+          value={selectedStatus}
+          onChange={handleStatusFilterChange}
+          options={[
+            { value: 1, label: 'Active' },
+            { value: 0, label: 'Inactive' }
+          ]}
+          isClearable
+        />
         <Button
           variant="secondary"
-          className="me-2 d-flex align-items-center"
+          className="me-2 rounded shadow btn-md d-flex align-items-center"
+          style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
           onClick={handleFilter}
         >
           <i className="fa-solid fa-filter me-1"></i> Filter
@@ -448,9 +469,13 @@ const UserPage = () => {
           <i className="fa-solid fa-times me-1"></i> Clear
         </Button>
       </div>
-      
-      <Button onClick={handleAdd} variant="primary" className="mt-1">
-        Add New User
+      <Button
+        variant="primary"
+        onClick={handleAdd}
+        className="mb-3 rounded shadow btn-md"
+        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+      >
+        <i className="fa-solid fa-plus me-2"></i> Add New User
       </Button>
       <table className="table table-bordered mt-1">
         <thead>
@@ -458,6 +483,8 @@ const UserPage = () => {
             <th>#</th>
             <th>Name</th>
             <th>Phone</th>
+            <th>Role</th>
+            <th>Status</th>
             <th>Email</th>
             <th className="text-center">Actions</th>
           </tr>
@@ -466,7 +493,6 @@ const UserPage = () => {
           {renderUserRows()}
         </tbody>
       </table>
-
       {!isFiltered && filteredUsers.length > 0 && (
         <Paginate
           paginator={paginator}
@@ -474,7 +500,6 @@ const UserPage = () => {
           pagechanged={(page) => setCurrentPage(page)}
         />
       )}
-
       <UserModal
         show={showModal}
         handleClose={handleClose}

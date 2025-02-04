@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 
 const Sliders = () => {
@@ -11,6 +11,8 @@ const Sliders = () => {
   const [showModal, setShowModal] = useState(false);
   const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [uploadedFilePath, setUploadedFilePath] = useState('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState('');
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
   const filePath = `uploads/modules/home-main-slider/`;
@@ -143,11 +145,16 @@ const Sliders = () => {
     }));
   };
 
+  const handleImageClick = (src) => {
+    setImageModalSrc(src);
+    setShowImageModal(true);
+  };
+
   return (
     <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh' }}>
       <h1>Sliders</h1>
-      <Button variant="primary" onClick={handleAdd} className="mb-3">
-        Create New Slider
+      <Button variant="primary"  style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }} onClick={handleAdd} className="mb-3 rounded shadow btn-md">
+      <i className="fa-solid fa-plus me-2"></i>  Create New Slider
       </Button>
       <Table bordered>
         <thead>
@@ -161,34 +168,19 @@ const Sliders = () => {
             sliders.map((slider) => (
               <tr key={slider.id}>
                 <td>
-                  <img src={`${slider.file_path}`} alt={slider.file_name} width="100" />
+                  <img 
+                    src={`${slider.file_path}`} 
+                    alt={slider.file_name} 
+                    width="100" 
+                    style={{ cursor: 'pointer' }} 
+                    onClick={() => handleImageClick(`${slider.file_path}`)} 
+                  />
                 </td>
-                 <td className="text-center">
-                                    <Button variant="link" onClick={() => handleEdit(slider.id)}>
-                                    <i class="fa-solid fa-pen-to-square text-dark"></i>
-                                    </Button>
-                                  </td>
-                {/* <td className="text-center">
-                  <Dropdown>
-                    <Dropdown.Toggle
-                      variant="link"
-                      className="text-decoration-none p-0"
-                      id={`dropdown-${slider.id}`}
-                      onClick={() => toggleUpdateButton(slider.id)}
-                    >
-                      <i className="fa-solid fa-ellipsis-vertical text-primary"></i>
-                    </Dropdown.Toggle>
-
-                    <Dropdown.Menu show={visibleUpdateButtons[slider.id]}>
-                      <Dropdown.Item
-                        onClick={() => handleEdit(slider.id)}
-                        className="text-primary"
-                      >
-                        Update
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </td> */}
+                <td className="text-center">
+                  <Button variant="link" onClick={() => handleEdit(slider.id)}>
+                    <i className="fa-solid fa-pen-to-square text-dark"></i>
+                  </Button>
+                </td>
               </tr>
             ))
           ) : (
@@ -222,6 +214,14 @@ const Sliders = () => {
               </Button>
             </div>
           </form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Image Modal */}
+      <Modal className='ms-5' show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body className="d-flex  justify-content-center">
+          <img src={imageModalSrc} alt="Slider" style={{ width: '100%', height: 'auto' }} />
         </Modal.Body>
       </Modal>
     </div>
