@@ -5,7 +5,6 @@ import Select from 'react-select';
 import Paginate from './Paginate';
 
 const Orders = () => {
-  // Base states
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,6 +48,23 @@ const Orders = () => {
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
+  // Handle authentication errors
+  const handleAuthError = () => {
+    alert("Authentication failed. Please log in again.");
+    // Redirect to login page or handle as needed
+    window.location.href = "/login";
+  };
+
+  // Handle API errors
+  const handleApiError = (error) => {
+    console.error("API Error:", error);
+    if (error.response?.status === 401) {
+      handleAuthError();
+    } else {
+      alert("An error occurred. Please try again.");
+    }
+  };
+
   // Calculate payment status based on paid amount and total
   const calculatePaymentStatus = (paidAmount, total) => {
     if (paidAmount === 0) return 1; // Unpaid
@@ -75,6 +91,36 @@ const Orders = () => {
       case 3: return "badge bg-warning text-dark";
       default: return "badge bg-danger text-white";
     }
+  };
+
+  // Handle filter
+  const handleFilter = () => {
+    // Reset to first page when applying filters
+    setCurrentPage(1);
+    fetchOrders();
+  };
+
+  // Handle clear filter
+  const handleClearFilter = () => {
+    // Reset all filter states
+    setSelectedOrder(null);
+    setOrderStatusFilter(null);
+    setPaymentStatusFilter(null);
+    setPaymentMethodFilter(null);
+    setShipmentStatusFilter(null);
+    setStartDate('');
+    setEndDate('');
+    
+    // Reset to first page
+    setCurrentPage(1);
+    
+    // Fetch orders without filters
+    fetchOrders();
+  };
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   useEffect(() => {
@@ -226,8 +272,6 @@ const Orders = () => {
     }
   };
 
-  // ... (keep other utility functions like handleAuthError, handleApiError, etc.)
-
   const renderOrderRows = () => {
     return filteredOrders.map((order) => (
       <tr key={order.id} style={{ fontSize: '12px' }}>
@@ -288,9 +332,92 @@ const Orders = () => {
   return (
     <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Orders</h1>   
+      <div className="mb-3 d-flex flex-column">
+        <div className="d-flex align-items-center mb-2">
+          <Select
+            className="form-control me-2"
+            placeholder="Search orders..."
+            value={selectedOrder}
+            onChange={setSelectedOrder}
+            options={filterData.order_number_list}
+            isClearable
+          />
+          <Select
+            className="form-control me-2"
+            placeholder="Order Status"
+            value={orderStatusFilter}
+            onChange={setOrderStatusFilter}
+            options={filterData.order_status_list}
+            isClearable
+          />
+        </div>
+
+        <div className="d-flex align-items-center mb-2">
+          <Select
+            className="form-control me-2"
+            placeholder="Payment Status"
+            value={paymentStatusFilter}
+            onChange={setPaymentStatusFilter}
+            options={filterData.payment_status_list}
+            isClearable
+          />
+          <Select
+            className="form-control me-2"
+            placeholder="Payment Method"
+            value={paymentMethodFilter}
+            onChange={setPaymentMethodFilter}
+            options={filterData.payment_method_list}
+            isClearable
+          />
+          <Select
+            className="form-control me-2"
+            placeholder="Shipment Status"
+            value={shipmentStatusFilter}
+            onChange={setShipmentStatusFilter}
+            options={filterData.shipment_status_list}
+            isClearable
+          />
+        </div>
+
+        <div className="row mb-2">
+          <div className="col-md-4">
+            <Form.Control
+              type="date"
+              className="form-control me-2"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="col-md-4">
+            <Form.Control
+              type="date"
+              className="form-control me-2"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="col-md-4 d-flex align-items-center">
+            <Button
+              variant="secondary"
+              className="me-2 rounded shadow btn-md d-flex align-items-center"
+              style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+              onClick={handleFilter}
+            >
+              <i className="fa-solid fa-filter me-1"></i> Filter
+            </Button>
+            <Button
+              variant="outline-danger"
+              className="d-flex align-items-center"
+              onClick={handleClearFilter}
+            >
+              <i className="fa-solid fa-times me-1"></i> Clear
+            </Button>
+          </div>
+        </div>
+      </div>
       <Table bordered className="table-striped table-hover">
         <thead>
-          <tr>
+        <tr>
             <th>Order Number</th>
             <th style={{ width: "80px" }}>Customer Info</th>
             <th style={{ width: "200px" }}>Payment Info</th>
@@ -311,7 +438,7 @@ const Orders = () => {
         />
       )}
 
-      <Modal dialogClassName="custom-modal"  show={showModal} onHide={() => setShowModal(false)}>
+      <Modal dialogClassName="custom-modal" show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Update Order</Modal.Title>
         </Modal.Header>
@@ -379,7 +506,7 @@ const Orders = () => {
                   value={deliveryCharge}
                   onChange={(e) => setDeliveryCharge(Number(e.target.value))}
                 />
-                </Form.Group>
+              </Form.Group>
               <p><strong>Total:</strong> {Number(modalData.sub_total) + Number(deliveryCharge)} TK</p>
 
               <Form.Group className="mb-3">
@@ -409,8 +536,6 @@ const Orders = () => {
                   </span>
                 </p>
               </div>
-
-             
             </>
           )}
         </Modal.Body>
