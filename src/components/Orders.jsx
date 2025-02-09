@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, Dropdown, Form } from 'react-bootstrap';
+import { Modal, Button, Table, Form } from 'react-bootstrap';
 import axios from 'axios';
 import Select from 'react-select';
 import Paginate from './Paginate';
@@ -24,10 +24,11 @@ const Orders = () => {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({});
-  const [visibleUpdateButtons, setVisibleUpdateButtons] = useState({});
   const [shipmentStatus, setShipmentStatus] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState("Unpaid");
+  const [paymentStatus, setPaymentStatus] = useState(null);
   const [orderStatus, setOrderStatus] = useState("Processing");
+  const [deliveryCharge, setDeliveryCharge] = useState(80);
+  const [paidAmount, setPaidAmount] = useState(0);
 
   // Filter states
   const [filterData, setFilterData] = useState({
@@ -48,6 +49,33 @@ const Orders = () => {
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
+  // Calculate payment status based on paid amount and total
+  const calculatePaymentStatus = (paidAmount, total) => {
+    if (paidAmount === 0) return 1; // Unpaid
+    if (paidAmount === total) return 2; // Paid
+    if (paidAmount > 0 && paidAmount < total) return 3; // Partially Paid
+    return 1; // Default to Unpaid
+  };
+
+  // Get payment status label
+  const getPaymentStatusLabel = (statusId) => {
+    switch (statusId) {
+      case 1: return "Unpaid";
+      case 2: return "Paid";
+      case 3: return "Partially Paid";
+      default: return "Unpaid";
+    }
+  };
+
+  // Get payment status badge class
+  const getPaymentStatusBadgeClass = (statusId) => {
+    switch (statusId) {
+      case 1: return "badge bg-danger text-white";
+      case 2: return "badge bg-success text-white";
+      case 3: return "badge bg-warning text-dark";
+      default: return "badge bg-danger text-white";
+    }
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -67,7 +95,15 @@ const Orders = () => {
       });
 
       if (response.data.status === "success") {
-        setFilterData(response.data.data);
+        // Add "Partially Paid" to payment status list if not exists
+        const updatedPaymentStatusList = [...response.data.data.payment_status_list];
+        if (!updatedPaymentStatusList.find(status => status.value === 3)) {
+          updatedPaymentStatusList.push({ value: 3, label: "Partially Paid" });
+        }
+        setFilterData({
+          ...response.data.data,
+          payment_status_list: updatedPaymentStatusList
+        });
       }
     } catch (error) {
       handleApiError(error);
@@ -82,17 +118,11 @@ const Orders = () => {
     }
 
     try {
-
       const params = new URLSearchParams();
       params.append('page', currentPage);
       params.append('per_page', ordersPerPage);
 
-      console.log('Selected Order:', selectedOrder);
-
-
-      if (selectedOrder?.value) {
-        params.append('order_number', selectedOrder.label); 
-      }
+      if (selectedOrder?.value) params.append('order_number', selectedOrder.label);
       if (orderStatusFilter) params.append('order_status_id', orderStatusFilter.value);
       if (paymentStatusFilter) params.append('payment_status_id', paymentStatusFilter.value);
       if (paymentMethodFilter) params.append('payment_method_id', paymentMethodFilter.value);
@@ -109,8 +139,19 @@ const Orders = () => {
 
       if (response.data.status === "success") {
         const { data, paginator: paginatorData } = response.data.data;
-        setOrders(data);
-        setFilteredOrders(data);
+        
+        // Calculate correct payment status for each order
+        const updatedData = data.map(order => ({
+          ...order,
+          total: Number(order.sub_total) + Number(order.delivery_charge),
+          payment_status: calculatePaymentStatus(
+            Number(order.paid_amount),
+            Number(order.sub_total) + Number(order.delivery_charge)
+          )
+        }));
+
+        setOrders(updatedData);
+        setFilteredOrders(updatedData);
         setPaginator(paginatorData);
       }
     } catch (error) {
@@ -118,38 +159,22 @@ const Orders = () => {
     }
   };
 
-
-  const handleFilter = () => {
-    setCurrentPage(1);
-    fetchOrders();
-  };
-
-  const handleClearFilter = () => {
-    setSelectedOrder(null);
-    setOrderStatusFilter(null);
-    setPaymentStatusFilter(null);
-    setPaymentMethodFilter(null);
-    setShipmentStatusFilter(null);
-    setStartDate('');
-    setEndDate('');
-    setCurrentPage(1);
-    fetchOrders();
-  };
-
-  // Modal handling
   const handleViewDetails = (order) => {
+    const total = Number(order.sub_total) + Number(order.delivery_charge);
     setModalData(order);
     setShipmentStatus(
       filterData.shipment_status_list.find(
         status => status.value === order.shipment_status_id
       )?.label || ""
     );
-    setPaymentStatus(order.payment_status === 2 ? "Paid" : "Unpaid");
+    setPaymentStatus(getPaymentStatusLabel(order.payment_status));
     setOrderStatus(
       filterData.order_status_list.find(
         status => status.value === order.order_status_id
       )?.label || "Processing"
     );
+    setDeliveryCharge(order.delivery_charge || 80);
+    setPaidAmount(order.paid_amount || 0);
     setShowModal(true);
   };
 
@@ -160,6 +185,9 @@ const Orders = () => {
       return;
     }
 
+    const totalAmount = Number(modalData.sub_total) + Number(deliveryCharge);
+    const paymentStatusId = calculatePaymentStatus(Number(paidAmount), totalAmount);
+
     const updatedData = {
       id: modalData.id,
       shipment_status_id: filterData.shipment_status_list.find(
@@ -168,10 +196,12 @@ const Orders = () => {
       order_status_id: filterData.order_status_list.find(
         status => status.label === orderStatus
       )?.value || null,
-      payment_status_id: paymentStatus === "Paid" ? 2 : 1,
-      paid_amount: paymentStatus === "Paid" ? modalData.total : 0,
-      due: paymentStatus === "Paid" ? 0 : modalData.total,
+      payment_status_id: paymentStatusId,
+      paid_amount: paidAmount,
+      due: totalAmount - paidAmount,
+      delivery_charge: deliveryCharge,
       payment_method_id: modalData.payment_method_id,
+      total: totalAmount
     };
 
     try {
@@ -189,39 +219,14 @@ const Orders = () => {
       if (response.data.status === "success") {
         alert("Order updated successfully!");
         setShowModal(false);
-        fetchOrders(); 
+        fetchOrders(); // Refresh the orders list
       }
     } catch (error) {
       handleApiError(error);
     }
   };
 
-
-  const handleAuthError = () => {
-    localStorage.removeItem("authToken");
-    alert("Please log in to continue.");
-    window.location.href = "/login";
-  };
-
-  const handleApiError = (error) => {
-    if (error.response?.status === 401) {
-      handleAuthError();
-    } else {
-      console.error("API Error:", error);
-      alert("An error occurred. Please try again.");
-    }
-  };
-
-  const toggleUpdateButton = (orderId) => {
-    setVisibleUpdateButtons(prev => ({
-      ...prev,
-      [orderId]: !prev[orderId]
-    }));
-  };
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  // ... (keep other utility functions like handleAuthError, handleApiError, etc.)
 
   const renderOrderRows = () => {
     return filteredOrders.map((order) => (
@@ -236,12 +241,12 @@ const Orders = () => {
         <td>
           <div>Subtotal: {order.sub_total} TK</div>
           <div>Delivery Charge: {order.delivery_charge} TK</div>
-          <div>Total: {order.total} TK</div>
-          <div>Due: {order.due} TK</div>
+          <div>Total: {Number(order.sub_total) + Number(order.delivery_charge)} TK</div>
+          <div>Due: {(Number(order.sub_total) + Number(order.delivery_charge)) - Number(order.paid_amount)} TK</div>
           <div>Paid Amount: {order.paid_amount} TK</div>
           <div>
-            <span className={order.payment_status === 1 ? "badge bg-warning text-dark" : "badge bg-success text-white"}>
-              {order.payment_status === 1 ? "Unpaid" : "Paid"}
+            <span className={getPaymentStatusBadgeClass(order.payment_status)}>
+              {getPaymentStatusLabel(order.payment_status)}
             </span>
           </div>
         </td>
@@ -263,7 +268,6 @@ const Orders = () => {
                   )}
                 </tr>
               ))}
-       
             </tbody>
           </Table>
         </td>
@@ -272,104 +276,18 @@ const Orders = () => {
             status => status.value === order.shipment_status_id
           )?.label || "Pending"}
         </td>
-           <td className="text-center">
-                            <Button variant="link" onClick={() => handleViewDetails(order)}>
-                            <i class="fa-solid fa-pen-to-square text-dark"></i>
-                            </Button>
-                          </td>
-        
+        <td className="text-center">
+          <Button variant="link" onClick={() => handleViewDetails(order)}>
+            <i className="fa-solid fa-pen-to-square text-dark"></i>
+          </Button>
+        </td>
       </tr>
     ));
   };
 
   return (
     <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
-      <h1>Orders</h1>
-      <div className="mb-3 d-flex flex-column">
-  <div className="d-flex align-items-center mb-2">
-    <Select
-      className="form-control me-2"
-      placeholder="Search orders..."
-      value={selectedOrder}
-      onChange={setSelectedOrder}
-      options={filterData.order_number_list}
-      isClearable
-    />
-    <Select
-      className="form-control me-2"
-      placeholder="Order Status"
-      value={orderStatusFilter}
-      onChange={setOrderStatusFilter}
-      options={filterData.order_status_list}
-      isClearable
-    />
-  </div>
-
-  <div className="d-flex align-items-center mb-2">
-    <Select
-      className="form-control me-2"
-      placeholder="Payment Status"
-      value={paymentStatusFilter}
-      onChange={setPaymentStatusFilter}
-      options={filterData.payment_status_list}
-      isClearable
-    />
-    <Select
-      className="form-control me-2"
-      placeholder="Payment Method"
-      value={paymentMethodFilter}
-      onChange={setPaymentMethodFilter}
-      options={filterData.payment_method_list}
-      isClearable
-    />
-    <Select
-      className="form-control me-2"
-      placeholder="Shipment Status"
-      value={shipmentStatusFilter}
-      onChange={setShipmentStatusFilter}
-      options={filterData.shipment_status_list}
-      isClearable
-    />
-  </div>
-
-  <div className="row mb-2">
-    <div className="col-md-4">
-      <Form.Control
-        type="date"
-        className="form-control me-2"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-      />
-    </div>
-    <div className="col-md-4">
-      <Form.Control
-        type="date"
-        className="form-control me-2"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-      />
-    </div>
-    <div className="col-md-4 d-flex align-items-center">
-      <Button
-        variant="secondary"
-        className="me-2 rounded shadow btn-md d-flex align-items-center"
-        style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
-        onClick={handleFilter}
-      >
-        <i className="fa-solid fa-filter me-1"></i> Filter
-      </Button>
-      <Button
-        variant="outline-danger"
-        className="d-flex align-items-center"
-        onClick={handleClearFilter}
-      >
-        <i className="fa-solid fa-times me-1"></i> Clear
-      </Button>
-    </div>
-  </div>
-</div>
-
-      {/* Orders Table */}
+      <h1>Orders</h1>   
       <Table bordered className="table-striped table-hover">
         <thead>
           <tr>
@@ -385,7 +303,6 @@ const Orders = () => {
         <tbody>{renderOrderRows()}</tbody>
       </Table>
 
-      {/* Pagination */}
       {paginator?.total_pages > 1 && (
         <Paginate
           paginator={paginator}
@@ -394,8 +311,7 @@ const Orders = () => {
         />
       )}
 
-      {/* Update Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal dialogClassName="custom-modal"  show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Update Order</Modal.Title>
         </Modal.Header>
@@ -407,7 +323,6 @@ const Orders = () => {
               <p><strong>Email:</strong> {modalData.email}</p>
               <p><strong>Phone:</strong> {modalData.phone}</p>
               <p><strong>Shipping Address:</strong> {modalData.shipping_address}</p>
-              <p><strong>Total:</strong> {modalData.total} TK</p>
               
               <Form.Group className="mb-3">
                 <Form.Label>Shipment Status</Form.Label>
@@ -416,20 +331,7 @@ const Orders = () => {
                   value={shipmentStatus}
                   onChange={(e) => setShipmentStatus(e.target.value)}
                 >
-                    {filterData.shipment_status_list.map(status => (
-                    <option key={status.value} value={status.label}>{status.label}</option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Payment Status</Form.Label>
-                <Form.Control 
-                  as="select" 
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                >
-                  {filterData.payment_status_list.map(status => (
+                  {filterData.shipment_status_list.map(status => (
                     <option key={status.value} value={status.label}>{status.label}</option>
                   ))}
                 </Form.Control>
@@ -447,6 +349,68 @@ const Orders = () => {
                   ))}
                 </Form.Control>
               </Form.Group>
+              
+              <Table bordered>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modalData.order_detail && modalData.order_detail.map(detail => (
+                    <tr key={detail.id}>
+                      <td>{detail.product.name}</td>
+                      <td>{detail.price} TK</td>
+                      <td>{detail.qty}</td>
+                      <td>{detail.price * detail.qty} TK</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+
+              <p><strong>Subtotal:</strong> {modalData.sub_total} TK</p>
+              <Form.Group className="mb-3">
+                <Form.Label>Delivery Charge</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  value={deliveryCharge}
+                  onChange={(e) => setDeliveryCharge(Number(e.target.value))}
+                />
+                </Form.Group>
+              <p><strong>Total:</strong> {Number(modalData.sub_total) + Number(deliveryCharge)} TK</p>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Paid Amount</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  value={paidAmount}
+                  onChange={(e) => {
+                    const newPaidAmount = Number(e.target.value);
+                    setPaidAmount(newPaidAmount);
+                    const total = Number(modalData.sub_total) + Number(deliveryCharge);
+                    const newPaymentStatus = calculatePaymentStatus(newPaidAmount, total);
+                    setPaymentStatus(getPaymentStatusLabel(newPaymentStatus));
+                  }}
+                />
+              </Form.Group>
+
+              <div className="payment-summary">
+                <p><strong>Due:</strong> {Math.max(0, Number(modalData.sub_total) + Number(deliveryCharge) - Number(paidAmount))} TK</p>
+                <p>
+                  <strong>Payment Status: </strong>
+                  <span className={getPaymentStatusBadgeClass(calculatePaymentStatus(
+                    Number(paidAmount),
+                    Number(modalData.sub_total) + Number(deliveryCharge)
+                  ))}>
+                    {paymentStatus}
+                  </span>
+                </p>
+              </div>
+
+             
             </>
           )}
         </Modal.Body>
@@ -454,7 +418,11 @@ const Orders = () => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleUpdate}>
+          <Button 
+            variant="primary" 
+            onClick={handleUpdate}
+            disabled={Number(paidAmount) > Number(modalData.sub_total) + Number(deliveryCharge)}
+          >
             Update Order
           </Button>
         </Modal.Footer>
