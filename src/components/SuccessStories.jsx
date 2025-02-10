@@ -331,7 +331,7 @@ const SuccessStories = () => {
           <tbody>{renderStories()}</tbody>
         </Table>
         {paginator?.total_pages > 1 && <Paginate paginator={paginator} currentPage={currentPage} pagechanged={handlePageChange} />}
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
           <Modal.Header closeButton>
             <Modal.Title>{isEditing ? "Update Story" : "Create New Story"}</Modal.Title>
           </Modal.Header>

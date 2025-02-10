@@ -390,7 +390,7 @@ const EventPage = () => {
       </Table>
       {paginator?.total_pages > 1 && renderPagination()}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
             {isEditing ? "Update Event" : "Create New Event"}

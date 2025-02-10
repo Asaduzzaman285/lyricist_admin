@@ -9,3 +9,9 @@
     overflow-x: hidden;
     overflow-y: auto;
   }
+
+  .no-border td:first-child {
+    border-left: none !important;
+    border-bottom: none !important;
+    border-top: none !important;
+  }

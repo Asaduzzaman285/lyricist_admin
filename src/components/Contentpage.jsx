@@ -379,7 +379,7 @@ const ContentPage = () => {
       </Table>
       {paginator?.total_pages > 1 && renderPagination()}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title>{isEditing ? "Edit Product" : "Add Product"}</Modal.Title>
         </Modal.Header>

@@ -192,7 +192,7 @@ const Ads = () => {
       </Table>
 
       {/* Modal Component */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title>
             {isEditing ? "Update Ad" : "Create New Ad"}
@@ -218,7 +218,7 @@ const Ads = () => {
       </Modal>
 
       {/* Image Modal */}
-      <Modal show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered>
+      <Modal show={showImageModal} onHide={() => setShowImageModal(false)} size="lg" centered >
         <Modal.Header closeButton></Modal.Header>
         <Modal.Body className="d-flex justify-content-center">
           <img src={imageModalSrc} alt="Ad" style={{ width: '100%', height: 'auto' }} />

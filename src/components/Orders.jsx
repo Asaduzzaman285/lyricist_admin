@@ -48,14 +48,14 @@ const Orders = () => {
 
   const API_BASE_URL = "https://lyricistadminapi.wineds.com";
 
-  // Handle authentication errors
+
   const handleAuthError = () => {
     alert("Authentication failed. Please log in again.");
-    // Redirect to login page or handle as needed
+   
     window.location.href = "/login";
   };
 
-  // Handle API errors
+
   const handleApiError = (error) => {
     console.error("API Error:", error);
     if (error.response?.status === 401) {
@@ -65,7 +65,6 @@ const Orders = () => {
     }
   };
 
-  // Calculate payment status based on paid amount and total
   const calculatePaymentStatus = (paidAmount, total) => {
     if (paidAmount === 0) return 1; // Unpaid
     if (paidAmount === total) return 2; // Paid
@@ -73,7 +72,7 @@ const Orders = () => {
     return 1; // Default to Unpaid
   };
 
-  // Get payment status label
+  
   const getPaymentStatusLabel = (statusId) => {
     switch (statusId) {
       case 1: return "Unpaid";
@@ -83,7 +82,7 @@ const Orders = () => {
     }
   };
 
-  // Get payment status badge class
+
   const getPaymentStatusBadgeClass = (statusId) => {
     switch (statusId) {
       case 1: return "badge bg-danger text-white";
@@ -93,16 +92,16 @@ const Orders = () => {
     }
   };
 
-  // Handle filter
+
   const handleFilter = () => {
-    // Reset to first page when applying filters
+  
     setCurrentPage(1);
     fetchOrders();
   };
 
-  // Handle clear filter
+ 
   const handleClearFilter = () => {
-    // Reset all filter states
+   
     setSelectedOrder(null);
     setOrderStatusFilter(null);
     setPaymentStatusFilter(null);
@@ -111,14 +110,14 @@ const Orders = () => {
     setStartDate('');
     setEndDate('');
     
-    // Reset to first page
+  
     setCurrentPage(1);
     
-    // Fetch orders without filters
+
     fetchOrders();
   };
 
-  // Handle page change
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -294,11 +293,11 @@ const Orders = () => {
             </span>
           </div>
         </td>
-        <td>
+        {/* <td>
           {order.order_detail.map(detail => (
             <div key={detail.id}>{detail.product.name} x {detail.qty}</div>
           ))}
-        </td>
+        </td> */}
         <td>
           <Table bordered className="table-sm">
             <tbody>
@@ -333,95 +332,99 @@ const Orders = () => {
     <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
       <h1>Orders</h1>   
       <div className="mb-3 d-flex flex-column">
-        <div className="d-flex align-items-center mb-2">
-          <Select
-            className="form-control me-2"
-            placeholder="Search orders..."
-            value={selectedOrder}
-            onChange={setSelectedOrder}
-            options={filterData.order_number_list}
-            isClearable
-          />
-          <Select
-            className="form-control me-2"
-            placeholder="Order Status"
-            value={orderStatusFilter}
-            onChange={setOrderStatusFilter}
-            options={filterData.order_status_list}
-            isClearable
-          />
-        </div>
+  <div className="d-flex align-items-center mb-2">
+    <Select
+      className="form-control me-2"
+      placeholder="Order No"
+      value={selectedOrder}
+      onChange={setSelectedOrder}
+      options={filterData.order_number_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Order Status"
+      value={orderStatusFilter}
+      onChange={setOrderStatusFilter}
+      options={filterData.order_status_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Payment Status"
+      value={paymentStatusFilter}
+      onChange={setPaymentStatusFilter}
+      options={filterData.payment_status_list}
+      isClearable
+    />
+    <Select
+      className="form-control me-2"
+      placeholder="Payment Method"
+      value={paymentMethodFilter}
+      onChange={setPaymentMethodFilter}
+      options={filterData.payment_method_list}
+      isClearable
+    />
+  </div>
 
-        <div className="d-flex align-items-center mb-2">
-          <Select
-            className="form-control me-2"
-            placeholder="Payment Status"
-            value={paymentStatusFilter}
-            onChange={setPaymentStatusFilter}
-            options={filterData.payment_status_list}
-            isClearable
-          />
-          <Select
-            className="form-control me-2"
-            placeholder="Payment Method"
-            value={paymentMethodFilter}
-            onChange={setPaymentMethodFilter}
-            options={filterData.payment_method_list}
-            isClearable
-          />
-          <Select
-            className="form-control me-2"
-            placeholder="Shipment Status"
-            value={shipmentStatusFilter}
-            onChange={setShipmentStatusFilter}
-            options={filterData.shipment_status_list}
-            isClearable
-          />
-        </div>
+  <div className="d-flex align-items-center mb-2 ">
+    <Select
+      className="form-control me-2"
+      placeholder="Shipment Status"
+      value={shipmentStatusFilter}
+      onChange={setShipmentStatusFilter}
+      options={filterData.shipment_status_list}
+      isClearable
+    />
 
-        <div className="row mb-2">
-          <div className="col-md-4">
-            <Form.Control
-              type="date"
-              className="form-control me-2"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="col-md-4">
-            <Form.Control
-              type="date"
-              className="form-control me-2"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="col-md-4 d-flex align-items-center">
-            <Button
-              variant="secondary"
-              className="me-2 rounded shadow btn-md d-flex align-items-center"
-              style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
-              onClick={handleFilter}
-            >
-              <i className="fa-solid fa-filter me-1"></i> Filter
-            </Button>
-            <Button
-              variant="outline-danger"
-              className="d-flex align-items-center"
-              onClick={handleClearFilter}
-            >
-              <i className="fa-solid fa-times me-1"></i> Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+
+ <Form.Group className="form-floating me-2 ">
+  <Form.Control
+    type="date"
+    id="startDate"
+    className="form-control"
+    value={startDate}
+    onChange={(e) => setStartDate(e.target.value)}
+    placeholder="Start Date"
+  />
+  <Form.Label htmlFor="startDate">Start Date</Form.Label>
+</Form.Group>
+
+<Form.Group className="form-floating me-2 ">
+  <Form.Control
+    type="date"
+    id="endDate"
+    className="form-control"
+    value={endDate}
+    onChange={(e) => setEndDate(e.target.value)}
+    placeholder="End Date"
+  />
+  <Form.Label htmlFor="endDate">End Date</Form.Label>
+</Form.Group>
+    <Button
+      variant="secondary"
+      className="me-2 rounded shadow btn-md d-flex align-items-center"
+      style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }}
+      onClick={handleFilter}
+    >
+      <i className="fa-solid fa-filter me-1"></i> Filter
+    </Button>
+    <Button
+      variant="outline-danger"
+      className="d-flex align-items-center"
+      onClick={handleClearFilter}
+    >
+      <i className="fa-solid fa-times me-1"></i> Clear
+    </Button>
+  </div>
+</div>
       <Table bordered className="table-striped table-hover">
         <thead>
         <tr>
             <th>Order Number</th>
             <th style={{ width: "80px" }}>Customer Info</th>
             <th style={{ width: "200px" }}>Payment Info</th>
-            <th style={{ width: "60px" }}>Order Details</th>
+            {/* <th style={{ width: "60px" }}>Order Details</th> */}
             <th>Order Status</th>
             <th>Shipment Status</th>
             <th className="text-center">Actions</th>
@@ -438,79 +441,84 @@ const Orders = () => {
         />
       )}
 
-      <Modal dialogClassName="custom-modal" show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Update Order</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {modalData && (
-            <>
-              <p><strong>Order Number:</strong> {modalData.order_number}</p>
-              <p><strong>Name:</strong> {modalData.name}</p>
-              <p><strong>Email:</strong> {modalData.email}</p>
-              <p><strong>Phone:</strong> {modalData.phone}</p>
-              <p><strong>Shipping Address:</strong> {modalData.shipping_address}</p>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Shipment Status</Form.Label>
-                <Form.Control 
-                  as="select" 
-                  value={shipmentStatus}
-                  onChange={(e) => setShipmentStatus(e.target.value)}
-                >
-                  {filterData.shipment_status_list.map(status => (
-                    <option key={status.value} value={status.label}>{status.label}</option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
+<Modal dialogClassName="custom-modal" show={showModal} onHide={() => setShowModal(false)} size="lg">
+  <Modal.Header closeButton>
+    <Modal.Title>Update Order</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {modalData && (
+      <>
+        <p><strong>Order Number:</strong> {modalData.order_number}</p>
+        <p><strong>Name:</strong> {modalData.name}</p>
+        <p><strong>Email:</strong> {modalData.email}</p>
+        <p><strong>Phone:</strong> {modalData.phone}</p>
+        <p><strong>Shipping Address:</strong> {modalData.shipping_address}</p>
+        
+        <Form.Group className="mb-3">
+          <Form.Label>Shipment Status</Form.Label>
+          <Form.Control 
+            as="select" 
+            value={shipmentStatus}
+            onChange={(e) => setShipmentStatus(e.target.value)}
+          >
+            {filterData.shipment_status_list.map(status => (
+              <option key={status.value} value={status.label}>{status.label}</option>
+            ))}
+          </Form.Control>
+        </Form.Group>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Order Status</Form.Label>
-                <Form.Control 
-                  as="select" 
-                  value={orderStatus}
-                  onChange={(e) => setOrderStatus(e.target.value)}
-                >
-                  {filterData.order_status_list.map(status => (
-                    <option key={status.value} value={status.label}>{status.label}</option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-              
-              <Table bordered>
-                <thead>
-                  <tr>
-                    <th>Product Name</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modalData.order_detail && modalData.order_detail.map(detail => (
-                    <tr key={detail.id}>
-                      <td>{detail.product.name}</td>
-                      <td>{detail.price} TK</td>
-                      <td>{detail.qty}</td>
-                      <td>{detail.price * detail.qty} TK</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-
-              <p><strong>Subtotal:</strong> {modalData.sub_total} TK</p>
-              <Form.Group className="mb-3">
-                <Form.Label>Delivery Charge</Form.Label>
+        <Form.Group className="mb-3">
+          <Form.Label>Order Status</Form.Label>
+          <Form.Control 
+            as="select" 
+            value={orderStatus}
+            onChange={(e) => setOrderStatus(e.target.value)}
+          >
+            {filterData.order_status_list.map(status => (
+              <option key={status.value} value={status.label}>{status.label}</option>
+            ))}
+          </Form.Control>
+        </Form.Group>
+        
+        <Table bordered className="table  table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {modalData.order_detail && modalData.order_detail.map(detail => (
+              <tr key={detail.id}>
+                <td>{detail.product.name}</td>
+                <td>{detail.price} TK</td>
+                <td>{detail.qty}</td>
+                <td>{detail.price * detail.qty} TK</td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan="3" align='right'><strong>Subtotal</strong></td>
+              <td>{modalData.sub_total} TK</td>
+            </tr>
+            <tr>
+              <td colSpan="3" align='right'><strong>Delivery Charge</strong></td>
+              <td>
                 <Form.Control 
                   type="number" 
                   value={deliveryCharge}
                   onChange={(e) => setDeliveryCharge(Number(e.target.value))}
                 />
-              </Form.Group>
-              <p><strong>Total:</strong> {Number(modalData.sub_total) + Number(deliveryCharge)} TK</p>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Paid Amount</Form.Label>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan="3" align='right'><strong>Total</strong></td>
+              <td>{Number(modalData.sub_total) + Number(deliveryCharge)} TK</td>
+            </tr>
+            <tr>
+              <td colSpan="3" align='right'><strong>Paid Amount</strong></td>
+              <td>
                 <Form.Control 
                   type="number" 
                   value={paidAmount}
@@ -522,36 +530,44 @@ const Orders = () => {
                     setPaymentStatus(getPaymentStatusLabel(newPaymentStatus));
                   }}
                 />
-              </Form.Group>
-
-              <div className="payment-summary">
-                <p><strong>Due:</strong> {Math.max(0, Number(modalData.sub_total) + Number(deliveryCharge) - Number(paidAmount))} TK</p>
-                <p>
-                  <strong>Payment Status: </strong>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan="3" align='right'><strong>Due</strong></td>
+              <td>{Math.max(0, Number(modalData.sub_total) + Number(deliveryCharge) - Number(paidAmount))} TK</td>
+            </tr>
+            <tr>
+              <td colSpan="3" align="right"><strong>Payment Status:</strong></td>
+              <td>
+                <div className="payment-summary">
                   <span className={getPaymentStatusBadgeClass(calculatePaymentStatus(
                     Number(paidAmount),
                     Number(modalData.sub_total) + Number(deliveryCharge)
                   ))}>
                     {paymentStatus}
                   </span>
-                </p>
-              </div>
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleUpdate}
-            disabled={Number(paidAmount) > Number(modalData.sub_total) + Number(deliveryCharge)}
-          >
-            Update Order
-          </Button>
-        </Modal.Footer>
-      </Modal>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </Table>
+      </>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)}>
+      Close
+    </Button>
+    <Button 
+      variant="primary" 
+      onClick={handleUpdate}
+      disabled={Number(paidAmount) > Number(modalData.sub_total) + Number(deliveryCharge)}
+    >
+      Update Order
+    </Button>
+  </Modal.Footer>
+</Modal>
+
     </div>
   );
 };

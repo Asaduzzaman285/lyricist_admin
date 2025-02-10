@@ -192,7 +192,7 @@ const Sliders = () => {
       </Table>
 
       {/* Modal Component */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title>
             {isEditing ? "Update Slider" : "Create New Slider"}

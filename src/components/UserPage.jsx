@@ -7,7 +7,7 @@ import Paginate from './Paginate';
 // Modal Component
 const UserModal = ({ show, handleClose, handleSubmit, modalData, setModalData, isEditing, roles }) => {
   return (
-    <Modal show={show} onHide={handleClose}>
+    <Modal show={show} onHide={handleClose} size="lg" centered>
       <Modal.Header closeButton>
         <Modal.Title>{isEditing ? "Update User" : "Create New User"}</Modal.Title>
       </Modal.Header>
