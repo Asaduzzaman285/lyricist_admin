@@ -500,6 +500,12 @@ const UserPage = () => {
           pagechanged={(page) => setCurrentPage(page)}
         />
       )}
+       <div className="copyright mt-5 text-end">
+            Made with <span style={{ color: 'red' }}>❤️</span> by{' '}
+            <a href="https://wintelbd.com/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#007BFF' }}>
+              Wintel Limited
+            </a>
+          </div>
       <UserModal
         show={showModal}
         handleClose={handleClose}
