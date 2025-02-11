@@ -4,7 +4,7 @@ import axios from 'axios';
 import Select from 'react-select';
 import Paginate from './Paginate';
 
-const Orders = () => {
+const Orders = ({sidebarVisible}) => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,7 +20,6 @@ const Orders = () => {
     pagination_last_page: 1
   });
 
-  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({});
   const [shipmentStatus, setShipmentStatus] = useState(null);
@@ -29,7 +28,7 @@ const Orders = () => {
   const [deliveryCharge, setDeliveryCharge] = useState(80);
   const [paidAmount, setPaidAmount] = useState(0);
 
-  // Filter states
+
   const [filterData, setFilterData] = useState({
     order_number_list: [],
     payment_method_list: [],
@@ -327,9 +326,11 @@ const Orders = () => {
       </tr>
     ));
   };
-
+  const containerStyle = sidebarVisible
+  ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '99vw' }
+  : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '100vw'};
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
+    <div className="container" style={containerStyle}>
       <h1>Orders</h1>   
       <div className="mb-3 d-flex flex-column">
   <div className="d-flex align-items-center mb-2">

@@ -6799,7 +6799,35 @@ textarea.form-control-lg {
 .ratio-21x9 {
   --bs-aspect-ratio: 42.8571428571%;
 }
+.sb-nav-fixed {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
+#layoutSidenav {
+  display: flex;
+  flex: 1;
+}
+
+#layoutSidenav_nav {
+  width: 250px; /* Adjust as needed */
+  transition: width 0.3s;
+}
+
+.layoutSidenav_content {
+  flex: 1;
+  overflow: auto;
+  transition: margin-left 0.3s;
+}
+
+.sb-sidenav-toggled #layoutSidenav_nav {
+  width: 0;
+}
+
+.sb-sidenav-toggled .layoutSidenav_content {
+  margin-left: 0;
+}
 .fixed-top, .sb-nav-fixed #layoutSidenav #layoutSidenav_nav, .sb-nav-fixed .sb-topnav {
   position: fixed;
   top: 0;
@@ -10919,9 +10947,10 @@ body {
   z-index: 1039;
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_nav {
-  width: 225px;
+  width: 200px;
   height: 100vh;
   z-index: 1038;
+ 
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_nav .sb-sidenav {
   padding-top: 56px;

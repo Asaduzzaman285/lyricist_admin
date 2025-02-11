@@ -63,12 +63,7 @@ const Sidebar = () => {
             </div>
             Products
           </NavLink>
-          {/* <NavLink className="nav-link" to="/admin/contents" activeClassName="active">
-            <div className="sb-nav-link-icon">
-              <i className="fas fa-tachometer-alt"></i>
-            </div>
-            Podcasts
-          </NavLink> */}
+   
           <NavLink className="nav-link" to="/admin/success_stories" activeClassName="active">
             <div className="sb-nav-link-icon">
               <i className="fas fa-tachometer-alt"></i>

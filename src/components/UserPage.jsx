@@ -91,7 +91,7 @@ const UserModal = ({ show, handleClose, handleSubmit, modalData, setModalData, i
 };
 
 // Main UserPage Component
-const UserPage = () => {
+const UserPage = ({ sidebarVisible }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -421,9 +421,11 @@ const UserPage = () => {
       }));
     }
   };
-
+  const containerStyle = sidebarVisible
+  ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '99vw' }
+  : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',minWidth: '100vw'};
   return (
-    <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh' }}>
+    <div className="container" style={containerStyle}>
       <h1>Users</h1>
       <div className="mb-3 d-flex align-items-center">
         <Select

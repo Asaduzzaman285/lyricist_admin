@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 
-const Sliders = () => {
+const Sliders = ({sidebarVisible}) => {
   const [sliders, setSliders] = useState([]);
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -149,9 +149,11 @@ const Sliders = () => {
     setImageModalSrc(src);
     setShowImageModal(true);
   };
-
+  const containerStyle = sidebarVisible
+  ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '99vw' }
+  : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '100vw'};
   return (
-    <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh' }}>
+    <div className="container" style={containerStyle}>
       <h1>Sliders</h1>
       <Button variant="primary"  style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }} onClick={handleAdd} className="mb-3 rounded shadow btn-md">
       <i className="fa-solid fa-plus me-2"></i>  Create New Slider

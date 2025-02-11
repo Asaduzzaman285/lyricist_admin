@@ -32,9 +32,13 @@ const InfoCard = ({ title, path, color, icon }) => {
   );
 };
 
-const Homepage = () => {
+const Homepage = ({ sidebarVisible }) => {
+  const containerStyle = sidebarVisible
+    ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh', maxWidth: '99vw' }
+    : { padding: '60px 0 0 30px', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh', minWidth: '100vw' };
+
   return (
-    <div className="container mt-4" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', minHeight: '100vh' }}>
+    <div className="container mt-4" style={containerStyle}>
       <h1 className="mb-4">Dashboard</h1>
       <div className="row">
         {cardData.map((card, index) => (

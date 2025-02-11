@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Master from './layouts/admin/Master';
@@ -21,9 +18,7 @@ const App = () => {
                 <Master />
               </PrivateRoute>
             }
-            // element={
-            //   <Master />
-            // }
+           
           />
         </Routes>
       </Router>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
+import { min } from 'lodash';
 
-const Ads = () => {
+const Ads = ({ sidebarVisible }) => {
   const [ads, setAds] = useState([]);
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -150,11 +151,15 @@ const Ads = () => {
     setShowImageModal(true);
   };
 
+  const containerStyle = sidebarVisible
+    ? { padding: '60px 0 0 20%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',minWidth: '100vw' }
+    : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '100vw'};
+
   return (
-    <div className="container" style={{ padding: '10%', marginLeft: '10%', backgroundColor: 'aliceblue', overflowX: 'hidden',minHeight: '100vh' }}>
+    <div className="container" style={containerStyle}>
       <h1>Ads</h1>
-      <Button variant="primary" onClick={handleAdd}  style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }} className="mb-3 rounded shadow btn-md">
-      <i className="fa-solid fa-plus me-2"></i>  Create New Ad
+      <Button variant="primary" onClick={handleAdd} style={{ backgroundImage: 'linear-gradient(45deg, #007bff, #0056b3)' }} className="mb-3 rounded shadow btn-md">
+        <i className="fa-solid fa-plus me-2"></i> Create New Ad
       </Button>
       <Table bordered>
         <thead>

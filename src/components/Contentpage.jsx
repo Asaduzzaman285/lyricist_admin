@@ -4,7 +4,7 @@ import axios from 'axios';
 import Select from 'react-select';
 import Paginate from './Paginate';
 
-const ContentPage = () => {
+const ContentPage = ({sidebarVisible}) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -304,9 +304,11 @@ const ContentPage = () => {
       );
     });
   };
-
+  const containerStyle = sidebarVisible
+  ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '99vw' }
+  : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '100vw'};
   return (
-    <div className="container" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
+    <div className="container" style={containerStyle}>
       <h1>Products</h1>
       <div className="mb-3">
         <div className="row">

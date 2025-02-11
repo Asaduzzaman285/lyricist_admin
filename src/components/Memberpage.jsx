@@ -4,7 +4,7 @@ import axios from 'axios';
 import Select from 'react-select';
 import Paginate from './Paginate'; 
 
-const MemberPage = () => {
+const MemberPage = ({sidebarVisible}) => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({
@@ -338,9 +338,11 @@ const MemberPage = () => {
       );
     });
   };
-
+  const containerStyle = sidebarVisible
+  ? { padding: '60px 1% 0 17%', backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '99vw' }
+  : { padding: '60px 0 0 30px',backgroundColor: 'aliceblue', overflowX: 'hidden', minHeight: '100vh',maxWidth: '100vw'};
   return (
-    <div className="container mt-5" style={{ padding: "10%", marginLeft: "10%", backgroundColor: 'aliceblue', minHeight: '100vh' }}>
+    <div className="container mt-5" style={containerStyle}>
       <h1>Members</h1>
       <div className="mb-3 d-flex align-items-center">
         <Select
