@@ -45,7 +45,7 @@ const MemberPage = ({sidebarVisible}) => {
   const [memberStatusOptions, setMemberStatusOptions] = useState([]);
   const [positionOptions, setPositionOptions] = useState([]);
 
-  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
+  const API_BASE_URL = "https://adminapi.lyricistsassociationbd.com";
 
   useEffect(() => {
     fetchMembers();

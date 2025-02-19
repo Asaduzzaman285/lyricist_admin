@@ -47,7 +47,7 @@ const Orders = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
+  const API_BASE_URL = "https://adminapi.lyricistsassociationbd.com";
 
   // Calculate payment status based on paid amount and total
   const calculatePaymentStatus = (paidAmount, total) => {

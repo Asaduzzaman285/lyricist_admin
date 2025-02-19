@@ -38,7 +38,7 @@ const ContentPage = ({sidebarVisible}) => {
   const [imageModalSrc, setImageModalSrc] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   
-  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
+  const API_BASE_URL = "https://adminapi.lyricistsassociationbd.com";
 
   useEffect(() => {
     fetchProducts();

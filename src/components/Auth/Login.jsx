@@ -27,7 +27,7 @@ const Login = () => {
     try {
       axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
       axios.defaults.headers.post['Content-Type'] = 'application/json';
-      const response = await axios.post('https://lyricistadminapi.wineds.com/api/v1/login', {
+      const response = await axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/login', {
         email,
         password,
       });

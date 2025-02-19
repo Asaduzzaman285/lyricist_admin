@@ -14,7 +14,7 @@ const Sliders = ({sidebarVisible}) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState('');
 
-  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
+  const API_BASE_URL = "https://adminapi.lyricistsassociationbd.com";
   const filePath = `uploads/modules/home-main-slider/`;
 
   useEffect(() => {

@@ -45,7 +45,7 @@ const Orders = ({sidebarVisible}) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const API_BASE_URL = "https://lyricistadminapi.wineds.com";
+  const API_BASE_URL = "https://adminapi.lyricistsassociationbd.com";
 
 
   const handleAuthError = () => {

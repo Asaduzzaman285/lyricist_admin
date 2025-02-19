@@ -134,7 +134,7 @@ const UserPage = ({ sidebarVisible }) => {
         return;
     }
 
-    axios.post('https://lyricistadminapi.wineds.com/api/v1/getAllUsers', {}, {
+    axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/getAllUsers', {}, {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
@@ -195,7 +195,7 @@ const UserPage = ({ sidebarVisible }) => {
       return;
     }
 
-    axios.post(`https://lyricistadminapi.wineds.com/api/v1/getAllUsers_p?page=${page}`, {}, {
+    axios.post(`https://adminapi.lyricistsassociationbd.com/api/v1/getAllUsers_p?page=${page}`, {}, {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
@@ -219,7 +219,7 @@ const UserPage = ({ sidebarVisible }) => {
       return;
     }
     try {
-      const response = await axios.post('https://lyricistadminapi.wineds.com/api/v1/role/getAllRoles', {}, {
+      const response = await axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/role/getAllRoles', {}, {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
@@ -256,7 +256,7 @@ const UserPage = ({ sidebarVisible }) => {
 
     if (selectedUser) {
       try {
-        const response = await axios.post('https://lyricistadminapi.wineds.com/api/v1/getUser', 
+        const response = await axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/getUser', 
           { id: selectedUser.value },
           {
             headers: {
@@ -362,7 +362,7 @@ const UserPage = ({ sidebarVisible }) => {
 
     if (isEditing) {
       try {
-        await axios.post('https://lyricistadminapi.wineds.com/api/v1/updateUser', {
+        await axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/updateUser', {
           id,
           name,
           email,
@@ -387,7 +387,7 @@ const UserPage = ({ sidebarVisible }) => {
       }
     } else {
       try {
-        await axios.post('https://lyricistadminapi.wineds.com/api/v1/createUser', {
+        await axios.post('https://adminapi.lyricistsassociationbd.com/api/v1/createUser', {
           name,
           email,
           phone,
